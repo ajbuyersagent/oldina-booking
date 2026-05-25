@@ -886,8 +886,11 @@ function applyScriptUrl(){
   }
   saveScriptUrl(url);
   document.getElementById('setup-banner').style.display='none';
-  showToast && showToast('✓ Script URL saved — syncing now…');
-  load().then(()=>render());
+  const saved=document.createElement('div');
+  saved.style.cssText='position:fixed;top:0;left:0;right:0;background:#1a6b3c;color:#fff;text-align:center;padding:10px;font-family:var(--mono);font-size:13px;z-index:9999';
+  saved.textContent='✓ Apps Script URL saved — you can now submit bookings to the Google Sheet';
+  document.body.prepend(saved);
+  setTimeout(()=>saved.remove(),4000);
 }
 
 function initSetupBanner(){
