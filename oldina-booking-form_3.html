@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -755,16 +756,35 @@ async function submitBooking(){
   // POST to Google Sheet (if URL is configured)
   if(getScriptUrl()){
     try{
-      // Apps Script requires no-cors mode for cross-origin POST from plain HTML
-      await fetch(getScriptUrl(), {
-        method:'POST',
-        mode:'no-cors',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify(booking)
-      });
-      console.log('Booking posted to Google Sheet:', booking.ref);
+      // Use a form POST via hidden iframe to avoid CORS issues with Apps Script
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = getScriptUrl();
+      form.target = 'hidden-submit-frame';
+      form.style.display = 'none';
+
+      // Pass booking data as a single JSON field
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'payload';
+      input.value = JSON.stringify(booking);
+      form.appendChild(input);
+
+      // Hidden iframe to catch the response without page redirect
+      let iframe = document.getElementById('hidden-submit-frame');
+      if(!iframe){
+        iframe = document.createElement('iframe');
+        iframe.name = 'hidden-submit-frame';
+        iframe.id = 'hidden-submit-frame';
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      document.body.appendChild(form);
+      form.submit();
+      form.remove();
+      console.log('Booking submitted to Google Sheet:', booking.ref);
     } catch(err){
-      // Don't block the user — log the error and continue
       console.warn('Sheet write failed (non-fatal):', err);
     }
   } else {
