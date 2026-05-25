@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -729,7 +728,9 @@ function renderReview(){
 // The setup banner below lets the booking officer paste the URL once.
 // It is then saved to localStorage and used automatically.
 function getScriptUrl(){
-  return localStorage.getItem('oldina_script_url') || '';
+  // URL baked in — no setup required
+  const hardcoded = 'https://script.google.com/macros/s/AKfycbzACN2UqDZOjxJ5uimFUQVYbMVnrB3qZX0TpXAgmKVzxkbFMKH3pJFhrPSTzNkC05KJ/exec';
+  return localStorage.getItem('oldina_script_url') || hardcoded;
 }
 function saveScriptUrl(url){
   localStorage.setItem('oldina_script_url', url.trim());
