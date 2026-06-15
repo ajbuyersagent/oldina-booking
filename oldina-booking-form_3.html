@@ -441,10 +441,9 @@ function renderReview(){
   document.getElementById('review-cost-card').innerHTML=`<div class="review-card-header"><h3>Cost breakdown</h3><span style="font-size:12px;opacity:0.7">GST included &nbsp;${mixBadge}</span></div><div class="review-card-body">${costRows}<div class="review-row total"><span>Total</span><span>$${total.toLocaleString()}</span></div><div class="review-row deposit-row"><span>💳 Deposit due within 3 days (50%)</span><span>$${deposit.toLocaleString()}</span></div><div class="review-row" style="color:#5a6a80"><span>Balance due 30 days before arrival</span><span>$${balance.toLocaleString()}</span></div></div>`;
 }
 
-// ── Script URL — updated to new deployment ──
+// ── Script URL — hardcoded, no localStorage override ──
 function getScriptUrl(){
-  const hardcoded='https://script.google.com/macros/s/AKfycbyXk-pp0b-CeoIW8U6Il3z6ox2Q3wG0-8pWHQfmbZRs3g0PptDNxRxy_GrPts_QqSMG/exec';
-  return localStorage.getItem('oldina_script_url')||hardcoded;
+  return 'https://script.google.com/macros/s/AKfycbyXk-pp0b-CeoIW8U6Il3z6ox2Q3wG0-8pWHQfmbZRs3g0PptDNxRxy_GrPts_QqSMG/exec';
 }
 
 async function submitBooking(){
