@@ -25,16 +25,12 @@
 }
 html{background:var(--snow);color:var(--navy);font-family:var(--sans);font-size:16px;line-height:1.6}
 body{min-height:100vh;padding:0 0 60px}
-
-/* ── header ── */
 .site-header{background:var(--navy);color:#fff;padding:0}
 .header-inner{max-width:780px;margin:0 auto;padding:22px 24px;display:flex;align-items:center;gap:16px}
 .logo{width:48px;height:48px;border-radius:50%;background:var(--navy3);border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .logo svg{width:24px;height:24px;fill:none;stroke:#c5dff5;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .header-text h1{font-family:var(--serif);font-size:22px;font-weight:400;letter-spacing:-0.01em;line-height:1.1}
 .header-text p{font-size:12px;opacity:0.65;margin-top:2px;font-family:var(--mono)}
-
-/* ── progress ── */
 .progress-bar{background:var(--navy2);border-bottom:1px solid rgba(255,255,255,0.08)}
 .progress-inner{max-width:780px;margin:0 auto;padding:0 24px;display:flex}
 .step-tab{flex:1;padding:12px 8px;font-size:12px;font-family:var(--mono);color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:7px;border-bottom:3px solid transparent;cursor:default;transition:all 0.2s}
@@ -42,55 +38,39 @@ body{min-height:100vh;padding:0 0 60px}
 .step-tab.done{color:rgba(255,255,255,0.7);border-bottom-color:var(--avail)}
 .step-num{width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
 .step-tab.done .step-num{background:var(--avail);border-color:var(--avail);color:#fff}
-
-/* ── layout ── */
 .page{max-width:780px;margin:0 auto;padding:32px 24px 0}
 .section{display:none}
 .section.active{display:block;animation:fadeIn 0.25s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 .section-heading{font-family:var(--serif);font-size:26px;font-weight:400;margin-bottom:6px;color:var(--navy)}
 .section-sub{font-size:14px;color:#5a6a80;margin-bottom:28px}
-
-/* ── info/warn boxes ── */
 .info-box,.warn-box,.danger-box{border-radius:var(--radius-sm);padding:12px 16px;font-size:13.5px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-start;line-height:1.5}
 .info-box{background:var(--blue-bg);border:1px solid var(--blue-bd);color:var(--blue)}
 .warn-box{background:var(--warn-bg);border:1px solid var(--warn-bd);color:var(--warn)}
 .danger-box{background:var(--danger-bg);border:1px solid var(--danger-bd);color:var(--danger)}
 .box-icon{font-size:16px;margin-top:1px;flex-shrink:0}
-
-/* ── fields ── */
 .field-grid{display:grid;gap:16px;margin-bottom:16px}
 .field-grid.cols-2{grid-template-columns:1fr 1fr}
 .field-grid.cols-3{grid-template-columns:1fr 1fr 1fr}
 @media(max-width:560px){.field-grid.cols-2,.field-grid.cols-3{grid-template-columns:1fr}}
 .field{display:flex;flex-direction:column;gap:5px}
 .field label{font-size:12px;font-weight:500;color:#5a6a80;letter-spacing:0.03em;text-transform:uppercase}
-.field input,.field select,.field textarea{
-  border:1.5px solid #d0dae8;border-radius:var(--radius-sm);padding:10px 13px;
-  font-size:15px;font-family:var(--sans);color:var(--navy);background:#fff;
-  transition:border-color 0.15s,box-shadow 0.15s;width:100%
-}
+.field input,.field select,.field textarea{border:1.5px solid #d0dae8;border-radius:var(--radius-sm);padding:10px 13px;font-size:15px;font-family:var(--sans);color:var(--navy);background:#fff;transition:border-color 0.15s,box-shadow 0.15s;width:100%}
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,0.12)}
 .field textarea{resize:vertical;min-height:80px}
 .field .hint{font-size:11.5px;color:#7a8a9e}
 .field .error{font-size:11.5px;color:var(--danger);display:none}
 .field.has-error input,.field.has-error select{border-color:var(--danger)}
 .field.has-error .error{display:block}
-
-/* ── season badge inline ── */
 .season-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500;font-family:var(--mono);margin-left:6px;vertical-align:middle}
 .pill-long{background:#fef3c7;color:#92400e;border:1px solid #fcd34d}
 .pill-low{background:#dbeafe;color:#1e40af;border:1px solid #93c5fd}
 .pill-mid{background:#ffedd5;color:#9a3412;border:1px solid #fdba74}
 .pill-high{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
-
-/* ── dates summary strip ── */
 .dates-strip{background:var(--navy);color:#fff;border-radius:var(--radius);padding:14px 20px;margin-bottom:20px;display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .dates-strip.show{display:flex}
 .dates-strip-item{font-size:13px}
 .dates-strip-item span{display:block;font-size:10px;font-family:var(--mono);opacity:0.55;margin-bottom:2px;text-transform:uppercase;letter-spacing:0.05em}
-
-/* ── guest table ── */
 .guest-table-wrap{overflow-x:auto;margin-bottom:16px}
 table.guests{width:100%;border-collapse:collapse;font-size:13px;min-width:620px}
 table.guests th{text-align:left;padding:8px 8px;font-size:11px;font-weight:500;color:#5a6a80;text-transform:uppercase;letter-spacing:0.04em;border-bottom:2px solid #e0e8f0;background:var(--snow);white-space:nowrap}
@@ -102,8 +82,6 @@ table.guests input:focus,table.guests select:focus{outline:none;border-color:var
 .guest-controls{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .guest-controls span{font-size:13px;color:#5a6a80}
 .gc-count{font-size:20px;font-weight:500;font-family:var(--serif);min-width:28px;text-align:center;color:var(--navy)}
-
-/* ── buttons ── */
 .btn{display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border-radius:var(--radius-sm);font-size:15px;font-family:var(--sans);font-weight:500;cursor:pointer;transition:all 0.15s;border:none;text-decoration:none;white-space:nowrap}
 .btn-primary{background:var(--navy);color:#fff}
 .btn-primary:hover{background:var(--navy3)}
@@ -115,8 +93,6 @@ table.guests input:focus,table.guests select:focus{outline:none;border-color:var
 .mix-summary{display:flex;align-items:center;gap:10px;background:#f7f9fc;border:1px solid #e0e8f0;border-radius:6px;padding:8px 14px;font-size:13px;color:#3a4a5e;margin-bottom:10px}
 .mix-label{font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#9aabb8;font-family:var(--mono)}
 .btn-row{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid #e8eef5}
-
-/* ── review card ── */
 .review-card{background:#fff;border:1.5px solid #e0e8f0;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px}
 .review-card-header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
 .review-card-header h3{font-family:var(--serif);font-size:18px;font-weight:400}
@@ -127,13 +103,9 @@ table.guests input:focus,table.guests select:focus{outline:none;border-color:var
 .review-row .val{font-weight:500;text-align:right}
 .review-row.total{font-size:16px;font-weight:500;padding-top:12px;margin-top:4px;border-top:2px solid var(--navy)}
 .review-row.deposit-row{color:var(--blue);font-weight:500}
-
-/* ── checkboxes ── */
 .check-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px}
 .check-item{display:flex;align-items:flex-start;gap:12px;font-size:14px;color:#3a4a5e;line-height:1.5;cursor:pointer}
 .check-item input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex-shrink:0;accent-color:var(--navy);cursor:pointer}
-
-/* ── invoice ── */
 .invoice{background:#fff;border:1.5px solid #e0e8f0;border-radius:var(--radius);box-shadow:var(--shadow-lg);overflow:hidden}
 .invoice-top{background:var(--navy);color:#fff;padding:28px 32px}
 .invoice-top-row{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
@@ -161,43 +133,25 @@ table.invoice-lines tr:last-child td{border-bottom:none}
 .payment-row{display:flex;justify-content:space-between;font-size:13.5px;color:#2a4a7a;padding:4px 0}
 .payment-row.note{font-size:12px;color:#5a7a9a;margin-top:8px;padding-top:8px;border-top:1px solid var(--blue-bd)}
 .invoice-footer{font-size:11.5px;color:#9aabb8;line-height:1.6;border-top:1px solid #edf2f7;padding-top:16px}
-
-/* ── success header ── */
 .success-header{text-align:center;padding:32px 0 24px}
 .success-icon{width:64px;height:64px;border-radius:50%;background:var(--avail-bg);border:2px solid var(--avail-bd);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px}
 .success-header h2{font-family:var(--serif);font-size:28px;font-weight:400;margin-bottom:6px}
 .success-header p{font-size:14px;color:#5a6a80;max-width:480px;margin:0 auto}
-
-/* ── print ── */
 @media print{
   .site-header,.progress-bar,.btn-row,.no-print{display:none!important}
   body{padding:0;background:#fff}
   .page{padding:0;max-width:100%}
   .invoice{box-shadow:none;border:none}
   .section{display:block!important}
-  #sec1,#sec2,#sec3,#sec4-pre{display:none!important}
+  #sec1,#sec2,#sec3{display:none!important}
 }
 </style>
 </head>
 <body>
 
-  <!-- ── Setup banner (hidden once URL is saved) ── -->
-  <div id="setup-banner" style="display:none;background:#122040;color:#fff;padding:14px 20px;font-family:'DM Mono',monospace;font-size:13px;position:sticky;top:0;z-index:999;border-bottom:2px solid #fbbf24">
-    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <span style="color:#fbbf24;font-weight:500">⚙ Setup:</span>
-      <span style="opacity:0.8">Paste your Google Apps Script URL to enable sheet sync:</span>
-      <input id="script-url-input" type="text" placeholder="https://script.google.com/macros/s/.../exec"
-        style="flex:1;min-width:260px;padding:7px 11px;border-radius:5px;border:none;font-size:13px;font-family:'DM Mono',monospace;background:#1a2f55;color:#fff;border:1px solid #3a5a85">
-      <button onclick="applyScriptUrl()" style="background:#fbbf24;color:#0a1628;border:none;padding:8px 18px;border-radius:5px;font-weight:600;cursor:pointer;font-family:'DM Mono',monospace;font-size:13px">Save & connect</button>
-      <button onclick="document.getElementById('setup-banner').style.display='none'" style="background:transparent;color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.2);padding:8px 12px;border-radius:5px;cursor:pointer;font-size:12px">Dismiss</button>
-    </div>
-  </div>
-
 <header class="site-header">
   <div class="header-inner">
-    <div class="logo">
-      <svg viewBox="0 0 24 24"><path d="M12 2L3 20h18L12 2z"/><path d="M9 20v-6h6v6"/><path d="M8 14h8"/></svg>
-    </div>
+    <img src="https://ajbuyersagent.github.io/oldina-booking/Oldina-logo_copy" alt="Oldina Logo" style="width:52px;height:52px;object-fit:contain;filter:brightness(0) invert(1)">
     <div class="header-text">
       <h1>Oldina Ski Club</h1>
       <p>Perisher · 2026 Season Booking Form</p>
@@ -216,92 +170,36 @@ table.invoice-lines tr:last-child td{border-bottom:none}
 
 <div class="page">
 
-  <!-- ── STEP 1: Dates & Contact ── -->
   <div class="section active" id="sec1">
     <h2 class="section-heading">Dates &amp; contact details</h2>
     <p class="section-sub">All communication is by email only to <a href="mailto:bookings@oldinaperisher.com.au" style="color:var(--blue)">bookings@oldinaperisher.com.au</a>. Check-in after 2pm · Check-out by 9:30am · Minimum 2 nights.</p>
-
-    <div class="info-box">
-      <span class="box-icon">ℹ️</span>
-      <span>Accommodation is on a <strong>dinner, bed &amp; breakfast</strong> basis. Weekly bookings run Sunday to Sunday. Members must have paid their annual subscription before booking.</span>
-    </div>
-
+    <div class="info-box"><span class="box-icon">ℹ️</span><span>Accommodation is on a <strong>dinner, bed &amp; breakfast</strong> basis. Weekly bookings run Sunday to Sunday. Members must have paid their annual subscription before booking.</span></div>
     <div class="field-grid cols-2">
-      <div class="field" id="f-name">
-        <label>Lead guest name *</label>
-        <input type="text" id="lead-name" placeholder="Full name" autocomplete="name">
-        <span class="error">Please enter your full name</span>
-      </div>
-      <div class="field" id="f-email">
-        <label>Email address *</label>
-        <input type="email" id="email" placeholder="you@email.com" autocomplete="email">
-        <span class="error">Please enter a valid email</span>
-      </div>
+      <div class="field" id="f-name"><label>Lead guest name *</label><input type="text" id="lead-name" placeholder="Full name" autocomplete="name"><span class="error">Please enter your full name</span></div>
+      <div class="field" id="f-email"><label>Email address *</label><input type="email" id="email" placeholder="you@email.com" autocomplete="email"><span class="error">Please enter a valid email</span></div>
     </div>
-
     <div class="field-grid cols-2">
-      <div class="field" id="f-mobile">
-        <label>Mobile *</label>
-        <input type="tel" id="mobile" placeholder="04xx xxx xxx" autocomplete="tel">
-        <span class="error">Please enter your mobile number</span>
-      </div>
-      <div class="field" id="f-member">
-        <label>Membership status *</label>
-        <select id="member-status">
-          <option value="">Select…</option>
-          <option value="M">Member</option>
-          <option value="NM">Non-member</option>
-        </select>
-        <span class="hint">Members must have paid their 2026 subscription fee</span>
-        <span class="error">Please select your membership status</span>
-      </div>
+      <div class="field" id="f-mobile"><label>Mobile *</label><input type="tel" id="mobile" placeholder="04xx xxx xxx" autocomplete="tel"><span class="error">Please enter your mobile number</span></div>
+      <div class="field" id="f-member"><label>Membership status *</label><select id="member-status"><option value="">Select…</option><option value="M">Member</option><option value="NM">Non-member</option></select><span class="hint">Members must have paid their 2026 subscription fee</span><span class="error">Please select your membership status</span></div>
     </div>
-
     <div class="field-grid cols-2">
-      <div class="field" id="f-arrival">
-        <label>Arrival date *</label>
-        <input type="date" id="arrival" min="2026-06-05" max="2026-10-04">
-        <span class="hint">Check-in after 2pm. Weekly stays begin Sunday.</span>
-        <span class="error">Please select an arrival date</span>
-      </div>
-      <div class="field" id="f-departure">
-        <label>Departure date *</label>
-        <input type="date" id="departure" min="2026-06-07" max="2026-10-06">
-        <span class="hint">Check-out by 9:30am. Minimum stay: 2 nights.</span>
-        <span class="error">Please select a valid departure date (min 2 nights after arrival)</span>
-      </div>
+      <div class="field" id="f-arrival"><label>Arrival date *</label><input type="date" id="arrival" min="2026-06-05" max="2026-10-04"><span class="hint">Check-in after 2pm. Weekly stays begin Sunday.</span><span class="error">Please select an arrival date</span></div>
+      <div class="field" id="f-departure"><label>Departure date *</label><input type="date" id="departure" min="2026-06-07" max="2026-10-06"><span class="hint">Check-out by 9:30am. Minimum stay: 2 nights.</span><span class="error">Please select a valid departure date (min 2 nights after arrival)</span></div>
     </div>
-
     <div class="dates-strip" id="dates-strip">
       <div class="dates-strip-item"><span>Nights</span><strong id="ds-nights">—</strong></div>
       <div class="dates-strip-item"><span>Season</span><strong id="ds-season">—</strong></div>
       <div class="dates-strip-item"><span>Arrival</span><strong id="ds-arr">—</strong></div>
       <div class="dates-strip-item"><span>Departure</span><strong id="ds-dep">—</strong></div>
     </div>
-
-    <div class="field-grid">
-      <div class="field">
-        <label>Allergies or special dietary requirements</label>
-        <input type="text" id="allergies" placeholder="List any allergies or dietary needs — leave blank if none">
-      </div>
-    </div>
-
-    <div class="btn-row">
-      <span style="font-size:12px;color:#9aabb8">* Required fields</span>
-      <button class="btn btn-primary" onclick="goTo2()">Continue → Guests</button>
-    </div>
+    <div class="field-grid"><div class="field"><label>Allergies or special dietary requirements</label><input type="text" id="allergies" placeholder="List any allergies or dietary needs — leave blank if none"></div></div>
+    <div class="btn-row"><span style="font-size:12px;color:#9aabb8">* Required fields</span><button class="btn btn-primary" onclick="goTo2()">Continue → Guests</button></div>
   </div>
 
-  <!-- ── STEP 2: Guests ── -->
   <div class="section" id="sec2">
     <h2 class="section-heading">Guest details</h2>
     <p class="section-sub">Include every person staying. Full names are required by law. Maximum 14 guests (lodge capacity).</p>
-
-    <div class="warn-box">
-      <span class="box-icon">⚠️</span>
-      <span><strong>Under law</strong> — full names and addresses of ALL guests must be supplied at time of booking. Children under 5 must be in bed by 8pm. Children must be supervised at all times.</span>
-    </div>
-
+    <div class="warn-box"><span class="box-icon">⚠️</span><span><strong>Under law</strong> — full names and addresses of ALL guests must be supplied at time of booking. Children under 5 must be in bed by 8pm. Children must be supervised at all times.</span></div>
     <div class="guest-controls">
       <span>Number of guests:</span>
       <button class="btn btn-secondary btn-icon" onclick="removeGuest()" title="Remove guest">−</button>
@@ -309,93 +207,48 @@ table.invoice-lines tr:last-child td{border-bottom:none}
       <button class="btn btn-secondary btn-icon" onclick="addGuest()" title="Add guest">+</button>
       <span style="font-size:12px;color:#9aabb8">Max 14 (lodge capacity)</span>
     </div>
-
-    <div class="mix-summary">
-      <span class="mix-label">Membership mix:</span>
-      <span id="membership-summary"><strong>1</strong> member &nbsp;+&nbsp; <strong>0</strong> non-members</span>
-      <span style="font-size:11px;color:#9aabb8;margin-left:auto">Each guest is billed at their own rate</span>
-    </div>
-
-    <div class="warn-box" id="nominee-warning" style="display:none">
-      <span class="box-icon">⚠️</span>
-      <span>Nominee rule exceeded.</span>
-    </div>
-
+    <div class="mix-summary"><span class="mix-label">Membership mix:</span><span id="membership-summary"><strong>1</strong> member &nbsp;+&nbsp; <strong>0</strong> non-members</span><span style="font-size:11px;color:#9aabb8;margin-left:auto">Each guest is billed at their own rate</span></div>
+    <div class="warn-box" id="nominee-warning" style="display:none"><span class="box-icon">⚠️</span><span>Nominee rule exceeded.</span></div>
     <div class="guest-table-wrap">
       <table class="guests">
-        <thead>
-          <tr>
-            <th class="row-num">#</th>
-            <th style="min-width:120px">Surname *</th>
-            <th style="min-width:110px">First name *</th>
-            <th style="width:55px">Gender</th>
-            <th style="width:130px">Member status</th>
-            <th style="width:130px">Adult / Child</th>
-            <th style="width:75px">Child age</th>
-            <th style="width:90px" title="Single supplement: guest books entire twin room alone">Single room?</th>
-            <th style="width:36px"></th>
-          </tr>
-        </thead>
+        <thead><tr><th class="row-num">#</th><th style="min-width:120px">Surname *</th><th style="min-width:110px">First name *</th><th style="width:55px">Gender</th><th style="width:130px">Member status</th><th style="width:130px">Adult / Child</th><th style="width:75px">Child age</th><th style="width:90px">Single room?</th><th style="width:36px"></th></tr></thead>
         <tbody id="guest-tbody"></tbody>
       </table>
     </div>
-
-    <div class="info-box" style="margin-top:8px">
-      <span class="box-icon">ℹ️</span>
-      <span>Each guest is charged at <strong>their own individual rate</strong> — members at member rates, non-members at non-member rates. Children 3–17 pay child rates. Babies under 3: $25 flat fee (June Long Weekend through start of NSW school holidays only). Tick <strong>Single room?</strong> if a guest is booking the entire twin room for themselves (single supplement rates apply, subject to availability).</span>
-    </div>
-
-    <div class="btn-row">
-      <button class="btn btn-secondary" onclick="goTo1()">← Back</button>
-      <button class="btn btn-primary" onclick="goTo3()">Continue → Review</button>
-    </div>
+    <div class="info-box" style="margin-top:8px"><span class="box-icon">ℹ️</span><span>Each guest is charged at <strong>their own individual rate</strong> — members at member rates, non-members at non-member rates. Children 3–17 pay child rates. Babies under 3: $25 flat fee. Tick <strong>Single room?</strong> if a guest is booking the entire twin room for themselves (single supplement rates apply, subject to availability).</span></div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goTo1()">← Back</button><button class="btn btn-primary" onclick="goTo3()">Continue → Review</button></div>
   </div>
 
-  <!-- ── STEP 3: Review ── -->
   <div class="section" id="sec3">
     <h2 class="section-heading">Review your booking</h2>
     <p class="section-sub">Check all details before submitting. Rates include GST.</p>
-
     <div class="review-card" id="review-booking-card"></div>
     <div class="review-card" id="review-cost-card"></div>
-
     <div class="check-list">
       <label class="check-item"><input type="checkbox" id="chk1"><span>I have read and understood the Oldina Ski Club Booking Information sheet and Weekly Accommodation Rates for 2026.</span></label>
       <label class="check-item"><input type="checkbox" id="chk2"><span>I understand Oldina is a Not-for-Profit Co-operative and agree to participate in the kitchen duty roster (set/clear table and load/empty dishwasher for 1 breakfast and 1 dinner during a 7-night stay).</span></label>
       <label class="check-item"><input type="checkbox" id="chk3"><span>I understand a <strong>50% deposit must be paid within 3 days</strong> of booking confirmation, and the balance must be paid <strong>at least 30 days prior to arrival</strong>. Cancellations within 30 days are non-refundable. A $100 fee applies to booking date reductions.</span></label>
     </div>
-
-    <div id="review-error" class="danger-box" style="display:none">
-      <span class="box-icon">🚫</span>
-      <span id="review-error-msg">Please tick all acknowledgement boxes before submitting.</span>
-    </div>
-
-    <div class="btn-row">
-      <button class="btn btn-secondary" onclick="goTo2()">← Back</button>
-      <button class="btn btn-primary" id="submit-btn" onclick="submitBooking()">Submit &amp; generate invoice →</button>
-    </div>
+    <div id="review-error" class="danger-box" style="display:none"><span class="box-icon">🚫</span><span id="review-error-msg">Please tick all acknowledgement boxes before submitting.</span></div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goTo2()">← Back</button><button class="btn btn-primary" id="submit-btn" onclick="submitBooking()">Submit &amp; generate invoice →</button></div>
   </div>
 
-  <!-- ── STEP 4: Invoice ── -->
   <div class="section" id="sec4">
     <div class="success-header">
       <div class="success-icon">✓</div>
       <h2>Booking submitted!</h2>
       <p>Your booking request has been received. The booking officer will contact you within 3 business days to confirm your dates and arrange the 50% deposit.</p>
     </div>
-
     <div class="invoice" id="invoice-wrap"></div>
-
     <div class="btn-row no-print">
       <button class="btn btn-secondary" onclick="window.print()">🖨 Print / Save PDF</button>
       <button class="btn btn-primary" onclick="newBooking()">+ New booking</button>
     </div>
   </div>
 
-</div><!-- /page -->
+</div>
 
 <script>
-// ── Rates ──
 const RATES = {
   weekly: {
     low:  { M:{ adult:582,  child:418,  single:873  }, NM:{ adult:1040, child:747,  single:1560 }},
@@ -409,28 +262,25 @@ const RATES = {
     high: { M:{ adult:161, child:118, single:242 }, NM:{ adult:321, child:234, single:484 }},
     long: { M:{ adult:128, child:96,  single:193 }, NM:{ adult:275, child:202, single:416 }},
   },
-  longWknd: { M:{ adult:315, child:245 }, NM:{ adult:510, child:360 }},
 };
 
 const SEASONS = [
-  {start:'2026-06-05',end:'2026-06-13',key:'long', label:'June Long Weekend',   color:'pill-long'},
-  {start:'2026-06-14',end:'2026-06-20',key:'low',  label:'Low season',          color:'pill-low'},
-  {start:'2026-06-21',end:'2026-06-27',key:'mid',  label:'Mid season',          color:'pill-mid'},
-  {start:'2026-06-28',end:'2026-08-15',key:'high', label:'High season',         color:'pill-high'},
-  {start:'2026-08-16',end:'2026-08-29',key:'mid',  label:'Mid season',          color:'pill-mid'},
-  {start:'2026-08-30',end:'2026-10-05',key:'low',  label:'Low season',          color:'pill-low'},
+  {start:'2026-06-05',end:'2026-06-13',key:'long',label:'June Long Weekend',color:'pill-long'},
+  {start:'2026-06-14',end:'2026-06-20',key:'low', label:'Low season',       color:'pill-low'},
+  {start:'2026-06-21',end:'2026-06-27',key:'mid', label:'Mid season',       color:'pill-mid'},
+  {start:'2026-06-28',end:'2026-08-15',key:'high',label:'High season',      color:'pill-high'},
+  {start:'2026-08-16',end:'2026-08-29',key:'mid', label:'Mid season',       color:'pill-mid'},
+  {start:'2026-08-30',end:'2026-10-05',key:'low', label:'Low season',       color:'pill-low'},
 ];
 
-function getSeason(ds){ for(const s of SEASONS) if(ds>=s.start&&ds<=s.end) return s; return SEASONS[1]; }
-function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
-function addDays(ds,n){ const d=new Date(ds+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
-function fmtDate(ds){ return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'}); }
-function fmtShort(ds){ return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); }
-function genRef(){ return 'OSC-'+Date.now().toString(36).toUpperCase().slice(-6); }
+function getSeason(ds){for(const s of SEASONS)if(ds>=s.start&&ds<=s.end)return s;return SEASONS[1];}
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+function fmtDate(ds){return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'long',year:'numeric'});}
+function fmtShort(ds){return new Date(ds+'T12:00:00').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'});}
+function genRef(){return 'OSC-'+Date.now().toString(36).toUpperCase().slice(-6);}
 
-let guestCount=1, booking={};
+let guestCount=1,booking={};
 
-// ── Step navigation ──
 function setStep(n){
   for(let i=1;i<=4;i++){
     document.getElementById('sec'+i).className='section'+(i===n?' active':'');
@@ -441,51 +291,44 @@ function setStep(n){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function goTo1(){ setStep(1); }
+function goTo1(){setStep(1);}
 
 function goTo2(){
   let ok=true;
-  function req(id,fid,test){ const el=document.getElementById(id); const f=document.getElementById(fid); const v=el.value.trim(); const pass=test?test(v):!!v; f.className='field'+(pass?'':' has-error'); if(!pass)ok=false; return v; }
+  function req(id,fid,test){const el=document.getElementById(id);const f=document.getElementById(fid);const v=el.value.trim();const pass=test?test(v):!!v;f.className='field'+(pass?'':' has-error');if(!pass)ok=false;return v;}
   const name=req('lead-name','f-name');
   const email=req('email','f-email',v=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
   const mobile=req('mobile','f-mobile',v=>v.length>=8);
   const ms=req('member-status','f-member');
   const arr=req('arrival','f-arrival');
   const dep=req('departure','f-departure',v=>v&&daysBetween(arr,v)>=2);
-  if(!ok) return;
+  if(!ok)return;
   booking={name,email,mobile,member:ms,arrival:arr,departure:dep,allergies:document.getElementById('allergies').value.trim()};
-  setStep(2);
-  renderGuestTable();
+  setStep(2);renderGuestTable();
 }
 
 function goTo3(){
-  const guests=collectGuests();
-  if(!guests) return;
-  booking.guests=guests;
-  booking.cost=calcCost();
-  renderReview();
-  setStep(3);
+  const guests=collectGuests();if(!guests)return;
+  booking.guests=guests;booking.cost=calcCost();renderReview();setStep(3);
 }
 
-// ── Dates strip ──
-document.getElementById('arrival').addEventListener('change', updateDatesStrip);
-document.getElementById('departure').addEventListener('change', updateDatesStrip);
+document.getElementById('arrival').addEventListener('change',updateDatesStrip);
+document.getElementById('departure').addEventListener('change',updateDatesStrip);
 function updateDatesStrip(){
   const arr=document.getElementById('arrival').value;
   const dep=document.getElementById('departure').value;
   const strip=document.getElementById('dates-strip');
-  if(!arr||!dep) return strip.classList.remove('show');
+  if(!arr||!dep)return strip.classList.remove('show');
   const nights=daysBetween(arr,dep);
-  if(nights<1) return strip.classList.remove('show');
+  if(nights<1)return strip.classList.remove('show');
   const s=getSeason(arr);
   strip.classList.add('show');
   document.getElementById('ds-nights').textContent=nights+' night'+(nights!==1?'s':'');
-  document.getElementById('ds-season').innerHTML=`<span class="season-pill ${s.color}">${s.label}</span>`;
+  document.getElementById('ds-season').innerHTML='<span class="season-pill '+s.color+'">'+s.label+'</span>';
   document.getElementById('ds-arr').textContent=fmtDate(arr);
   document.getElementById('ds-dep').textContent=fmtDate(dep);
 }
 
-// ── Guest table ──
 function renderGuestTable(){
   const leadMs=booking.member||'M';
   const tbody=document.getElementById('guest-tbody');
@@ -496,29 +339,15 @@ function renderGuestTable(){
     const defFn=i===0?(booking.name||'').split(' ')[0]:'';
     const defMs=i===0?leadMs:(g.member||'M');
     const showAge=(g.type==='child'||g.type==='baby')?'block':'none';
-    html+=`<tr id="grow-${i}">
-      <td class="row-num">${i+1}</td>
+    html+=`<tr><td class="row-num">${i+1}</td>
       <td><input type="text" id="g${i}-sn" value="${g.surname||defSn}" placeholder="Surname"></td>
       <td><input type="text" id="g${i}-fn" value="${g.firstName||defFn}" placeholder="First name"></td>
-      <td><select id="g${i}-gender">
-        <option value="M"${(g.gender||'M')==='M'?' selected':''}>M</option>
-        <option value="F"${g.gender==='F'?' selected':''}>F</option>
-      </select></td>
-      <td><select id="g${i}-ms" onchange="updateMembershipSummary()">
-        <option value="M"${defMs==='M'?' selected':''}>Member</option>
-        <option value="NM"${defMs==='NM'?' selected':''}>Non-member</option>
-      </select></td>
-      <td><select id="g${i}-type" onchange="toggleAge(${i})">
-        <option value="adult"${(g.type||'adult')==='adult'?' selected':''}>Adult</option>
-        <option value="child"${g.type==='child'?' selected':''}>Child (3-17)</option>
-        <option value="baby"${g.type==='baby'?' selected':''}>Baby (&lt;3) - $25 flat</option>
-      </select></td>
-      <td><input type="number" id="g${i}-age" min="0" max="17" placeholder="Age"
-        value="${g.age||''}" style="display:${showAge}"></td>
-      <td style="text-align:center">
-        <input type="checkbox" id="g${i}-single" ${g.single?'checked':''} title="Single supplement: this guest is booking the entire twin room for themselves">
-      </td>
-      <td>${i>0?`<button type="button" class="btn-del-guest" onclick="deleteGuestRow(${i})" title="Remove">x</button>`:''}</td>
+      <td><select id="g${i}-gender"><option value="M"${(g.gender||'M')==='M'?' selected':''}>M</option><option value="F"${g.gender==='F'?' selected':''}>F</option></select></td>
+      <td><select id="g${i}-ms" onchange="updateMembershipSummary()"><option value="M"${defMs==='M'?' selected':''}>Member</option><option value="NM"${defMs==='NM'?' selected':''}>Non-member</option></select></td>
+      <td><select id="g${i}-type" onchange="toggleAge(${i})"><option value="adult"${(g.type||'adult')==='adult'?' selected':''}>Adult</option><option value="child"${g.type==='child'?' selected':''}>Child (3-17)</option><option value="baby"${g.type==='baby'?' selected':''}>Baby (&lt;3) - $25 flat</option></select></td>
+      <td><input type="number" id="g${i}-age" min="0" max="17" placeholder="Age" value="${g.age||''}" style="display:${showAge}"></td>
+      <td style="text-align:center"><input type="checkbox" id="g${i}-single" ${g.single?'checked':''}></td>
+      <td>${i>0?`<button type="button" class="btn-del-guest" onclick="deleteGuestRow(${i})">x</button>`:''}</td>
     </tr>`;
   }
   tbody.innerHTML=html;
@@ -526,60 +355,27 @@ function renderGuestTable(){
   updateMembershipSummary();
 }
 
-function toggleAge(i){
-  const t=document.getElementById('g'+i+'-type').value;
-  document.getElementById('g'+i+'-age').style.display=(t==='child'||t==='baby')?'block':'none';
-}
+function toggleAge(i){const t=document.getElementById('g'+i+'-type').value;document.getElementById('g'+i+'-age').style.display=(t==='child'||t==='baby')?'block':'none';}
 
 function updateMembershipSummary(){
   let members=0,nonMembers=0;
-  for(let i=0;i<guestCount;i++){
-    const el=document.getElementById('g'+i+'-ms');
-    if(!el) continue;
-    el.value==='M'?members++:nonMembers++;
-  }
+  for(let i=0;i<guestCount;i++){const el=document.getElementById('g'+i+'-ms');if(!el)continue;el.value==='M'?members++:nonMembers++;}
   const box=document.getElementById('membership-summary');
   const warn=document.getElementById('nominee-warning');
-  if(box) box.innerHTML='<strong>'+members+'</strong> member'+(members!==1?'s':'')+' &nbsp;+&nbsp; <strong>'+nonMembers+'</strong> non-member'+(nonMembers!==1?'s':'');
-  if(warn){
-    if(nonMembers>members){
-      warn.style.display='flex';
-      warn.querySelector('span').textContent='You have '+nonMembers+' non-members but only '+members+' member'+(members!==1?'s':'')+'. Oldina allows 1 non-member nominee per member, and the member must be staying at the same time. Non-members pay at non-member rates.';
-    } else {
-      warn.style.display='none';
-    }
-  }
+  if(box)box.innerHTML='<strong>'+members+'</strong> member'+(members!==1?'s':'')+' &nbsp;+&nbsp; <strong>'+nonMembers+'</strong> non-member'+(nonMembers!==1?'s':'');
+  if(warn){if(nonMembers>members){warn.style.display='flex';warn.querySelector('span').textContent='You have '+nonMembers+' non-members but only '+members+' member'+(members!==1?'s':'')+'. Oldina allows 1 non-member nominee per member.';}else{warn.style.display='none';}}
 }
 
-function addGuest(){
-  if(guestCount>=14){alert('Maximum 14 guests (lodge capacity).');return;}
-  booking.guests=collectGuestsRaw();
-  guestCount++;
-  renderGuestTable();
-}
-
-function removeGuest(){
-  if(guestCount<=1)return;
-  booking.guests=collectGuestsRaw();
-  guestCount--;
-  renderGuestTable();
-}
-
-function deleteGuestRow(i){
-  const current=collectGuestsRaw();
-  current.splice(i,1);
-  guestCount=current.length;
-  booking.guests=current;
-  renderGuestTable();
-}
+function addGuest(){if(guestCount>=14){alert('Maximum 14 guests.');return;}booking.guests=collectGuestsRaw();guestCount++;renderGuestTable();}
+function removeGuest(){if(guestCount<=1)return;booking.guests=collectGuestsRaw();guestCount--;renderGuestTable();}
+function deleteGuestRow(i){const c=collectGuestsRaw();c.splice(i,1);guestCount=c.length;booking.guests=c;renderGuestTable();}
 
 function collectGuestsRaw(){
   const guests=[];
   for(let i=0;i<guestCount;i++){
-    const sn=(document.getElementById('g'+i+'-sn')||{value:''}).value||'';
-    const fn=(document.getElementById('g'+i+'-fn')||{value:''}).value||'';
     guests.push({
-      surname:sn, firstName:fn,
+      surname:(document.getElementById('g'+i+'-sn')||{value:''}).value||'',
+      firstName:(document.getElementById('g'+i+'-fn')||{value:''}).value||'',
       gender:(document.getElementById('g'+i+'-gender')||{value:'M'}).value||'M',
       member:(document.getElementById('g'+i+'-ms')||{value:'M'}).value||'M',
       type:(document.getElementById('g'+i+'-type')||{value:'adult'}).value||'adult',
@@ -596,293 +392,116 @@ function collectGuests(){
     const sn=document.getElementById('g'+i+'-sn').value.trim();
     const fn=document.getElementById('g'+i+'-fn').value.trim();
     if(!sn||!fn){alert('Please enter full name for guest '+(i+1)+'.');return null;}
-    const singleEl=document.getElementById('g'+i+'-single');
-    guests.push({
-      surname:sn, firstName:fn,
-      gender:document.getElementById('g'+i+'-gender').value,
-      member:document.getElementById('g'+i+'-ms').value,
-      type:document.getElementById('g'+i+'-type').value,
-      age:document.getElementById('g'+i+'-age').value,
-      single:singleEl?singleEl.checked:false,
-    });
+    guests.push({surname:sn,firstName:fn,gender:document.getElementById('g'+i+'-gender').value,member:document.getElementById('g'+i+'-ms').value,type:document.getElementById('g'+i+'-type').value,age:document.getElementById('g'+i+'-age').value,single:(document.getElementById('g'+i+'-single')||{}).checked||false});
   }
-  // Soft nominee check
-  const nonMembers=guests.filter(g=>g.member==='NM').length;
-  const members=guests.filter(g=>g.member==='M').length;
-  if(nonMembers>members){
-    const ok=confirm('Warning: you have '+nonMembers+' non-members but only '+members+' member'+(members!==1?'s':'')+'.\n\nOldina rules allow 1 non-member nominee per member who must stay at the same time. Non-members pay at non-member rates.\n\nDo you want to continue anyway?');
-    if(!ok) return null;
-  }
+  const nm=guests.filter(g=>g.member==='NM').length;
+  const m=guests.filter(g=>g.member==='M').length;
+  if(nm>m){if(!confirm('Warning: '+nm+' non-members but only '+m+' member'+(m!==1?'s':'')+'. Continue?'))return null;}
   return guests;
 }
-// ── Cost calculation ──
+
 function calcCost(){
   const {arrival,departure,guests}=booking;
   const nights=daysBetween(arrival,departure);
   const season=getSeason(arrival);
   const isWeek=nights===7;
   let lines=[],total=0;
-
   guests.forEach(g=>{
     const gName=g.firstName+' '+g.surname;
-    if(g.type==='baby'){
-      lines.push({name:gName,desc:'Baby <3 years — flat fee per stay',rate:25,memberStatus:g.member});
-      total+=25;return;
-    }
+    if(g.type==='baby'){lines.push({name:gName,desc:'Baby <3 years — flat fee',rate:25,memberStatus:g.member,typeLabel:'Baby'});total+=25;return;}
     const ms=g.member;
     const type=g.type==='child'?'child':'adult';
-    const msLabel=ms==='M'?'Member':'Non-member';
     const typeLabel=type==='child'?'Child':'Adult';
-    const isSingle=g.single&&type==='adult'; // single supplement only applies to adults
+    const isSingle=g.single&&type==='adult';
     let rate,nightlyRate,isWeeklyRate;
-    if(isWeek){
-      rate=isSingle?RATES.weekly[season.key][ms]['single']:RATES.weekly[season.key][ms][type];
-      nightlyRate=isSingle?RATES.nightly[season.key][ms]['single']:RATES.nightly[season.key][ms][type];
-      isWeeklyRate=true;
-    } else {
-      nightlyRate=isSingle?RATES.nightly[season.key][ms]['single']:RATES.nightly[season.key][ms][type];
-      rate=nightlyRate*nights;
-      isWeeklyRate=false;
-    }
+    if(isWeek){rate=isSingle?RATES.weekly[season.key][ms].single:RATES.weekly[season.key][ms][type];nightlyRate=isSingle?RATES.nightly[season.key][ms].single:RATES.nightly[season.key][ms][type];isWeeklyRate=true;}
+    else{nightlyRate=isSingle?RATES.nightly[season.key][ms].single:RATES.nightly[season.key][ms][type];rate=nightlyRate*nights;isWeeklyRate=false;}
     lines.push({name:gName,rate,nightlyRate,nights,isWeeklyRate,memberStatus:ms,type,typeLabel,isSingle,season:season.label});
     total+=rate;
   });
-
   const deposit=Math.ceil(total*0.5);
   return{lines,total,deposit,balance:total-deposit,nights,season};
 }
 
-// ── Review ──
 function renderReview(){
   const {name,email,mobile,member,arrival,departure,allergies,cost}=booking;
   const {nights,season,lines,total,deposit,balance}=cost;
-
-  document.getElementById('review-booking-card').innerHTML=`
-    <div class="review-card-header"><h3>Booking summary</h3><span style="font-size:12px;opacity:0.7;font-family:var(--mono)">${member==='M'?'Member':'Non-member'}</span></div>
-    <div class="review-card-body">
-      <div class="review-row"><span class="label">Lead guest</span><span class="val">${name}</span></div>
-      <div class="review-row"><span class="label">Email</span><span class="val">${email}</span></div>
-      <div class="review-row"><span class="label">Mobile</span><span class="val">${mobile}</span></div>
-      <div class="review-row"><span class="label">Arrival</span><span class="val">${fmtDate(arrival)}</span></div>
-      <div class="review-row"><span class="label">Departure</span><span class="val">${fmtDate(departure)}</span></div>
-      <div class="review-row"><span class="label">Duration</span><span class="val">${nights} nights <span class="season-pill ${season.color}">${season.label}</span></span></div>
-      <div class="review-row"><span class="label">Guests</span><span class="val">${booking.guests.length} guest${booking.guests.length!==1?'s':''}</span></div>
-      ${allergies?`<div class="review-row"><span class="label">Dietary notes</span><span class="val">${allergies}</span></div>`:''}
-    </div>`;
-
-  // Build guest breakdown with member/non-member badge per line
-  const memberCount=booking.guests.filter(g=>g.member==='M').length;
+  document.getElementById('review-booking-card').innerHTML=`<div class="review-card-header"><h3>Booking summary</h3><span style="font-size:12px;opacity:0.7;font-family:var(--mono)">${member==='M'?'Member':'Non-member'}</span></div><div class="review-card-body"><div class="review-row"><span class="label">Lead guest</span><span class="val">${name}</span></div><div class="review-row"><span class="label">Email</span><span class="val">${email}</span></div><div class="review-row"><span class="label">Mobile</span><span class="val">${mobile}</span></div><div class="review-row"><span class="label">Arrival</span><span class="val">${fmtDate(arrival)}</span></div><div class="review-row"><span class="label">Departure</span><span class="val">${fmtDate(departure)}</span></div><div class="review-row"><span class="label">Duration</span><span class="val">${nights} nights <span class="season-pill ${season.color}">${season.label}</span></span></div><div class="review-row"><span class="label">Guests</span><span class="val">${booking.guests.length} guest${booking.guests.length!==1?'s':''}</span></div>${allergies?`<div class="review-row"><span class="label">Dietary notes</span><span class="val">${allergies}</span></div>`:''}</div>`;
   const nmCount=booking.guests.filter(g=>g.member==='NM').length;
-  const mixBadge=nmCount>0
-    ?`<span style="font-size:11px;font-family:var(--mono);color:#185FA5">${memberCount}M + ${nmCount}NM</span>`
-    :'';
-  let costRows=lines.map(l=>{
-    const isMember=l.memberStatus==='M';
-    const badge='<span style="font-size:9px;font-family:var(--mono);padding:1px 6px;border-radius:3px;font-weight:500;background:'+(isMember?'#e6f5ec':'#fff4e0')+';color:'+(isMember?'#1a6b3c':'#7a4f00')+';border:1px solid '+(isMember?'#a8d8bc':'#f5c76a')+'">'+(isMember?'Member':'Non-member')+'</span>';
-    let rateBreakdown;
-    if(l.rate===25){
-      // Baby flat fee
-      rateBreakdown='<span style="font-size:12px;color:#7a8a9e">Flat fee per stay</span>';
-    } else if(l.isWeeklyRate){
-      // Weekly rate: show nightly equivalent and 7-night total
-      const singleBadge=l.isSingle?'<span style="font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:3px;background:#eeedfe;color:#3c3489;border:1px solid #c4b5fd;margin-left:5px">Single supplement</span>':'';
-      rateBreakdown='<span style="font-size:12px;color:#7a8a9e">$'+l.nightlyRate.toLocaleString()+'/night</span>'
-        +'<span style="font-size:11px;color:#b0bec8;margin:0 5px">×</span>'
-        +'<span style="font-size:12px;color:#7a8a9e">7 nights</span>'
-        +'<span style="font-size:11px;color:#b0bec8;margin:0 5px">=</span>'
-        +'<span style="font-size:12px;font-weight:500;color:var(--navy)">$'+l.rate.toLocaleString()+'</span>'
-        +'<span style="font-size:10px;color:#185FA5;margin-left:5px;font-family:var(--mono)">(weekly rate)</span>'
-        +singleBadge;
-    } else {
-      // Nightly rate × nights
-      const singleBadge=l.isSingle?'<span style="font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:3px;background:#eeedfe;color:#3c3489;border:1px solid #c4b5fd;margin-left:5px">Single supplement</span>':'';
-      rateBreakdown='<span style="font-size:12px;color:#7a8a9e">$'+l.nightlyRate.toLocaleString()+'/night</span>'
-        +'<span style="font-size:11px;color:#b0bec8;margin:0 5px">×</span>'
-        +'<span style="font-size:12px;color:#7a8a9e">'+l.nights+' nights</span>'
-        +'<span style="font-size:11px;color:#b0bec8;margin:0 5px">=</span>'
-        +'<span style="font-size:12px;font-weight:500;color:var(--navy)">$'+l.rate.toLocaleString()+'</span>'
-        +singleBadge;
-    }
-    return '<div class="review-row" style="align-items:flex-start;padding:10px 0">'
-      +'<span class="label" style="flex:1">'
-        +'<span style="font-weight:500;color:var(--navy);font-size:14px">'+l.name+'</span> '+badge
-        +'<br><span style="font-size:12px;color:#9aabb8">'+l.typeLabel+' · '+l.season+'</span>'
-      +'</span>'
-      +'<span class="val" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+rateBreakdown+'</span>'
-      +'</div>';
+  const mCount=booking.guests.filter(g=>g.member==='M').length;
+  const mixBadge=nmCount>0?`<span style="font-size:11px;font-family:var(--mono);color:#185FA5">${mCount}M + ${nmCount}NM</span>`:'';
+  const costRows=lines.map(l=>{
+    const isMem=l.memberStatus==='M';
+    const badge='<span style="font-size:9px;font-family:var(--mono);padding:1px 6px;border-radius:3px;font-weight:500;background:'+(isMem?'#e6f5ec':'#fff4e0')+';color:'+(isMem?'#1a6b3c':'#7a4f00')+';border:1px solid '+(isMem?'#a8d8bc':'#f5c76a')+'">'+(isMem?'Member':'Non-member')+'</span>';
+    let rb;
+    if(l.rate===25){rb='<span style="font-size:12px;color:#7a8a9e">Flat fee per stay</span>';}
+    else{const sb=l.isSingle?'<span style="font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:3px;background:#eeedfe;color:#3c3489;border:1px solid #c4b5fd;margin-left:5px">Single supplement</span>':'';rb='<span style="font-size:12px;color:#7a8a9e">$'+l.nightlyRate.toLocaleString()+'/night</span> × <span style="font-size:12px;color:#7a8a9e">'+l.nights+' nights</span> = <span style="font-size:12px;font-weight:500">$'+l.rate.toLocaleString()+'</span>'+(l.isWeeklyRate?'<span style="font-size:10px;color:#185FA5;margin-left:5px;font-family:var(--mono)">(weekly rate)</span>':'')+sb;}
+    return '<div class="review-row" style="align-items:flex-start;padding:10px 0"><span class="label" style="flex:1"><span style="font-weight:500;color:var(--navy);font-size:14px">'+l.name+'</span> '+badge+'<br><span style="font-size:12px;color:#9aabb8">'+l.typeLabel+' · '+l.season+'</span></span><span class="val" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+rb+'</span></div>';
   }).join('');
-  document.getElementById('review-cost-card').innerHTML=`
-    <div class="review-card-header"><h3>Cost breakdown</h3><span style="font-size:12px;opacity:0.7">GST included &nbsp;${mixBadge}</span></div>
-    <div class="review-card-body">
-      ${costRows}
-      <div class="review-row total"><span>Total</span><span>$${total.toLocaleString()}</span></div>
-      <div class="review-row deposit-row"><span>💳 Deposit due within 3 days (50%)</span><span>$${deposit.toLocaleString()}</span></div>
-      <div class="review-row" style="color:#5a6a80"><span>Balance due 30 days before arrival</span><span>$${balance.toLocaleString()}</span></div>
-    </div>`;
+  document.getElementById('review-cost-card').innerHTML=`<div class="review-card-header"><h3>Cost breakdown</h3><span style="font-size:12px;opacity:0.7">GST included &nbsp;${mixBadge}</span></div><div class="review-card-body">${costRows}<div class="review-row total"><span>Total</span><span>$${total.toLocaleString()}</span></div><div class="review-row deposit-row"><span>💳 Deposit due within 3 days (50%)</span><span>$${deposit.toLocaleString()}</span></div><div class="review-row" style="color:#5a6a80"><span>Balance due 30 days before arrival</span><span>$${balance.toLocaleString()}</span></div></div>`;
 }
 
-// ── Google Apps Script endpoint ──────────────────────────────
-//  After deploying your Apps Script web app, paste the URL here.
-//  It looks like: https://script.google.com/macros/s/XXXX/exec
-// ── Script URL — reads from localStorage so no code editing needed ──
-// The setup banner below lets the booking officer paste the URL once.
-// It is then saved to localStorage and used automatically.
+// ── Script URL — updated to new deployment ──
 function getScriptUrl(){
-  // URL baked in — no setup required
-  const hardcoded = 'https://script.google.com/macros/s/AKfycbzACN2UqDZOjxJ5uimFUQVYbMVnrB3qZX0TpXAgmKVzxkbFMKH3pJFhrPSTzNkC05KJ/exec';
-  return localStorage.getItem('oldina_script_url') || hardcoded;
-}
-function saveScriptUrl(url){
-  localStorage.setItem('oldina_script_url', url.trim());
+  const hardcoded='https://script.google.com/macros/s/AKfycbyXk-pp0b-CeoIW8U6Il3z6ox2Q3wG0-8pWHQfmbZRs3g0PptDNxRxy_GrPts_QqSMG/exec';
+  return localStorage.getItem('oldina_script_url')||hardcoded;
 }
 
-// ── Submit ──
 async function submitBooking(){
   const errEl=document.getElementById('review-error');
   if(!document.getElementById('chk1').checked||!document.getElementById('chk2').checked||!document.getElementById('chk3').checked){
-    errEl.style.display='flex';
-    document.getElementById('review-error-msg').textContent='Please tick all three acknowledgement boxes before submitting.';
-    return;
+    errEl.style.display='flex';document.getElementById('review-error-msg').textContent='Please tick all three acknowledgement boxes before submitting.';return;
   }
   errEl.style.display='none';
-
-  // Disable button and show spinner
-  const btn=document.getElementById('submit-btn');
-  btn.disabled=true;
-  btn.textContent='Submitting…';
-
-  booking.ref=genRef();
-  booking.submittedAt=new Date().toISOString();
-
-  // POST to Google Sheet (if URL is configured)
-  if(getScriptUrl()){
-    try{
-      // Use a form POST via hidden iframe to avoid CORS issues with Apps Script
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = getScriptUrl();
-      form.target = 'hidden-submit-frame';
-      form.style.display = 'none';
-
-      // Pass booking data as a single JSON field
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = 'payload';
-      input.value = JSON.stringify(booking);
-      form.appendChild(input);
-
-      // Hidden iframe to catch the response without page redirect
-      let iframe = document.getElementById('hidden-submit-frame');
-      if(!iframe){
-        iframe = document.createElement('iframe');
-        iframe.name = 'hidden-submit-frame';
-        iframe.id = 'hidden-submit-frame';
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-      }
-
-      document.body.appendChild(form);
-      form.submit();
-      form.remove();
-      console.log('Booking submitted to Google Sheet:', booking.ref);
-    } catch(err){
-      console.warn('Sheet write failed (non-fatal):', err);
-    }
-  } else {
-    console.warn('No Apps Script URL saved. Open the file and use the setup banner.');
-  }
-
-  btn.disabled=false;
-  btn.textContent='Submit & generate invoice →';
-  generateInvoice();
-  setStep(4);
+  const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Submitting…';
+  booking.ref=genRef();booking.submittedAt=new Date().toISOString();
+  try{
+    const form=document.createElement('form');form.method='POST';form.action=getScriptUrl();form.target='hidden-submit-frame';form.style.display='none';
+    const input=document.createElement('input');input.type='hidden';input.name='payload';input.value=JSON.stringify(booking);form.appendChild(input);
+    let iframe=document.getElementById('hidden-submit-frame');
+    if(!iframe){iframe=document.createElement('iframe');iframe.name='hidden-submit-frame';iframe.id='hidden-submit-frame';iframe.style.display='none';document.body.appendChild(iframe);}
+    document.body.appendChild(form);form.submit();form.remove();
+  }catch(err){console.warn('Sheet write failed:',err);}
+  btn.disabled=false;btn.textContent='Submit & generate invoice →';
+  generateInvoice();setStep(4);
 }
 
-// ── Invoice ──
 function generateInvoice(){
   const {ref,name,email,mobile,member,arrival,departure,allergies,guests,cost,submittedAt}=booking;
   const {lines,total,deposit,balance,nights,season}=cost;
-
-  const guestRows=guests.map((g,i)=>`<tr><td>${i+1}. ${g.firstName} ${g.surname}</td><td>${g.type==='baby'?'Baby <3':g.type==='child'?`Child (${g.age} yrs)`:'Adult'} · ${g.member==='M'?'Member':'Non-member'} · ${g.gender}</td><td style="text-align:right">—</td></tr>`).join('');
+  const guestRows=guests.map((g,i)=>`<tr><td>${i+1}. ${g.firstName} ${g.surname}</td><td>${g.type==='baby'?'Baby <3':g.type==='child'?'Child ('+g.age+' yrs)':'Adult'} · ${g.member==='M'?'Member':'Non-member'} · ${g.gender}</td><td style="text-align:right">—</td></tr>`).join('');
   const costRows=lines.map(l=>{
-    const isMember=l.memberStatus==='M';
-    const badge='<span style="font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:3px;font-weight:500;background:'+(isMember?'#e6f5ec':'#fff4e0')+';color:'+(isMember?'#1a6b3c':'#7a4f00')+';border:1px solid '+(isMember?'#a8d8bc':'#f5c76a')+';">'+(isMember?'Member':'Non-member')+'</span>';
-    let rateDesc;
-    if(l.rate===25){
-      rateDesc='Flat fee per stay (baby &lt;3)';
-    } else if(l.isWeeklyRate){
-      rateDesc='$'+l.nightlyRate.toLocaleString()+'/night &times; 7 nights'+(l.isSingle?' (single supplement — entire room)':'(weekly rate)')+' &bull; '+l.season;
-    } else {
-      rateDesc='$'+l.nightlyRate.toLocaleString()+'/night &times; '+l.nights+' nights'+(l.isSingle?' (single supplement — entire room)':'')+' &bull; '+l.season;
-    }
-    return '<tr><td>'+l.name+' '+badge+'<br><span style="font-size:11px;color:#9aabb8">'+l.typeLabel+'</span></td><td style="color:#5a6a80;font-size:13px">'+rateDesc+'</td><td style="text-align:right;font-weight:500">$'+l.rate.toLocaleString()+'</td></tr>';
+    const isMem=l.memberStatus==='M';
+    const badge='<span style="font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:3px;font-weight:500;background:'+(isMem?'#e6f5ec':'#fff4e0')+';color:'+(isMem?'#1a6b3c':'#7a4f00')+';border:1px solid '+(isMem?'#a8d8bc':'#f5c76a')+';">'+(isMem?'Member':'Non-member')+'</span>';
+    let rd=l.rate===25?'Flat fee per stay (baby <3)':'$'+l.nightlyRate.toLocaleString()+'/night × '+l.nights+' nights'+(l.isSingle?' (single supplement)':l.isWeeklyRate?' (weekly rate)':'')+' · '+l.season;
+    return '<tr><td>'+l.name+' '+badge+'<br><span style="font-size:11px;color:#9aabb8">'+l.typeLabel+'</span></td><td style="color:#5a6a80;font-size:13px">'+rd+'</td><td style="text-align:right;font-weight:500">$'+l.rate.toLocaleString()+'</td></tr>';
   }).join('');
-
   document.getElementById('invoice-wrap').innerHTML=`
-    <div class="invoice-top">
-      <div class="invoice-top-row">
-        <div>
-          <div class="invoice-brand">Oldina Ski Club</div>
-          <div class="invoice-brand-sub">Co-operative Limited · ABN 12 657 835 542</div>
-          <div class="invoice-brand-sub" style="margin-top:4px">bookings@oldinaperisher.com.au · oldinaperisher.com.au</div>
-        </div>
-        <div class="invoice-ref-block">
-          <div style="font-size:10px;opacity:0.55;font-family:var(--mono);margin-bottom:4px;letter-spacing:0.05em">BOOKING REFERENCE</div>
-          <div class="invoice-ref">${ref}</div>
-          <div class="invoice-date">${new Date(submittedAt).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div>
-          <div class="invoice-status-pill">Pending confirmation</div>
-        </div>
-      </div>
-    </div>
+    <div class="invoice-top"><div class="invoice-top-row">
+      <div><div class="invoice-brand">Oldina Ski Club</div><div class="invoice-brand-sub">Co-operative Limited · ABN 12 657 835 542</div><div class="invoice-brand-sub" style="margin-top:4px">bookings@oldinaperisher.com.au · oldinaperisher.com.au</div></div>
+      <div class="invoice-ref-block"><div style="font-size:10px;opacity:0.55;font-family:var(--mono);margin-bottom:4px;letter-spacing:0.05em">BOOKING REFERENCE</div><div class="invoice-ref">${ref}</div><div class="invoice-date">${new Date(submittedAt).toLocaleDateString('en-AU',{day:'numeric',month:'long',year:'numeric'})}</div><div class="invoice-status-pill">Pending confirmation</div></div>
+    </div></div>
     <div class="invoice-body">
       <div class="invoice-meta">
-        <div class="invoice-meta-block">
-          <h4>Billed to</h4>
-          <p><strong>${name}</strong>${email}<br>${mobile}<br>${member==='M'?'Member':'Non-member'}</p>
-          ${allergies?`<p style="margin-top:8px;font-size:12px;color:#5a6a80">Dietary notes: ${allergies}</p>`:''}
-        </div>
-        <div class="invoice-meta-block">
-          <h4>Stay details</h4>
-          <p>
-            <strong>${nights} nights · <span style="color:${season.key==='high'?'#dc2626':season.key==='mid'?'#ea580c':season.key==='long'?'#d97706':'#3b82f6'}">${season.label}</span></strong>
-            Arrival: ${fmtDate(arrival)}<br>
-            Departure: ${fmtDate(departure)}<br>
-            Guests: ${guests.length}
-          </p>
-        </div>
+        <div class="invoice-meta-block"><h4>Billed to</h4><p><strong>${name}</strong>${email}<br>${mobile}<br>${member==='M'?'Member':'Non-member'}</p>${allergies?'<p style="margin-top:8px;font-size:12px;color:#5a6a80">Dietary notes: '+allergies+'</p>':''}</div>
+        <div class="invoice-meta-block"><h4>Stay details</h4><p><strong>${nights} nights · ${season.label}</strong>Arrival: ${fmtDate(arrival)}<br>Departure: ${fmtDate(departure)}<br>Guests: ${guests.length}</p></div>
       </div>
-
-      <table class="invoice-lines">
-        <thead><tr><th>Guest</th><th>Details</th><th style="text-align:right">—</th></tr></thead>
-        <tbody>${guestRows}</tbody>
-      </table>
-
-      <table class="invoice-lines">
-        <thead><tr><th>Charge</th><th>Description</th><th style="text-align:right">Amount (GST incl.)</th></tr></thead>
-        <tbody>${costRows}</tbody>
-      </table>
-
+      <table class="invoice-lines"><thead><tr><th>Guest</th><th>Details</th><th style="text-align:right">—</th></tr></thead><tbody>${guestRows}</tbody></table>
+      <table class="invoice-lines"><thead><tr><th>Charge</th><th>Description</th><th style="text-align:right">Amount (GST incl.)</th></tr></thead><tbody>${costRows}</tbody></table>
       <div class="invoice-totals">
         <div class="itotal-row"><span>Subtotal (GST included)</span><span>$${total.toLocaleString()}</span></div>
         <div class="itotal-row grand"><span>Total</span><span>$${total.toLocaleString()}</span></div>
         <div class="itotal-row dep"><span>💳 Deposit due within 3 days of confirmation (50%)</span><span>$${deposit.toLocaleString()}</span></div>
         <div class="itotal-row" style="color:#5a6a80"><span>Balance due 30 days before arrival</span><span>$${balance.toLocaleString()}</span></div>
       </div>
-
-      <div class="payment-box">
-        <h4>Payment instructions</h4>
+      <div class="payment-box"><h4>Payment instructions</h4>
         <div class="payment-row"><span>Option 1 — Electronic Funds Transfer (EFT)</span></div>
         <div class="payment-row" style="padding-left:16px;color:#3a5a7a"><span>Quote booking reference: <strong>${ref}</strong> — account details provided by booking officer on confirmation</span></div>
         <div class="payment-row" style="margin-top:8px"><span>Option 2 — Credit card (Mastercard &amp; Visa only)</span></div>
         <div class="payment-row" style="padding-left:16px;color:#3a5a7a"><span>Booking officer can take 100% of invoice at time of confirmation</span></div>
-        <div class="payment-row note"><span>⏰ Your booking is NOT confirmed until the booking officer contacts you and 50% deposit is received within 3 days. Balance must be paid 30 days prior to arrival.</span></div>
+        <div class="payment-row note"><span>⏰ Your booking is NOT confirmed until the booking officer contacts you and 50% deposit is received within 3 days.</span></div>
       </div>
-
-      <div class="invoice-footer">
-        <strong>Cancellation policy:</strong> Cancellations more than 30 days before arrival: 10% cancellation fee. Less than 30 days: non-refundable. Early departures: non-refundable. Bookings cannot be carried over between seasons. Date reductions: $100 adjustment fee.<br><br>
-        <strong>Kitchen duty:</strong> Oldina operates a kitchen duty roster. For a 7-night stay, guests assist with set/clear table and load/empty dishwasher for 1 breakfast and 1 dinner.<br><br>
-        This is a pro-forma invoice. Your booking is not confirmed until the booking officer allocates your requested dates and a deposit is received.
-      </div>
+      <div class="invoice-footer"><strong>Cancellation policy:</strong> Cancellations more than 30 days before arrival: 10% cancellation fee. Less than 30 days: non-refundable. Early departures: non-refundable. Bookings cannot be carried over between seasons. Date reductions: $100 adjustment fee.<br><br><strong>Kitchen duty:</strong> For a 7-night stay, guests assist with set/clear table and load/empty dishwasher for 1 breakfast and 1 dinner.<br><br>This is a pro-forma invoice. Your booking is not confirmed until the booking officer allocates your requested dates and a deposit is received.</div>
     </div>`;
 }
 
@@ -895,38 +514,7 @@ function newBooking(){
   setStep(1);
 }
 
-// init guest table
 renderGuestTable();
-
-// ── Setup banner logic ──
-function applyScriptUrl(){
-  const url = document.getElementById('script-url-input').value.trim();
-  if(!url || !url.startsWith('https://script.google.com')){
-    alert('Please paste a valid Google Apps Script URL.\nIt should start with https://script.google.com/macros/s/');
-    return;
-  }
-  saveScriptUrl(url);
-  document.getElementById('setup-banner').style.display='none';
-  const saved=document.createElement('div');
-  saved.style.cssText='position:fixed;top:0;left:0;right:0;background:#1a6b3c;color:#fff;text-align:center;padding:10px;font-family:var(--mono);font-size:13px;z-index:9999';
-  saved.textContent='✓ Apps Script URL saved — you can now submit bookings to the Google Sheet';
-  document.body.prepend(saved);
-  setTimeout(()=>saved.remove(),4000);
-}
-
-function initSetupBanner(){
-  const saved = getScriptUrl();
-  const banner = document.getElementById('setup-banner');
-  if(!saved && banner){
-    banner.style.display='block';
-  } else if(saved && banner){
-    // Pre-fill in case they want to update it
-    const input = document.getElementById('script-url-input');
-    if(input) input.value = saved;
-  }
-}
-
-initSetupBanner();;
 </script>
 </body>
 </html>
