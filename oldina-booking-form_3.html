@@ -455,11 +455,14 @@ async function submitBooking(){
   const btn=document.getElementById('submit-btn');btn.disabled=true;btn.textContent='Submitting…';
   booking.ref=genRef();booking.submittedAt=new Date().toISOString();
   try{
-    const form=document.createElement('form');form.method='POST';form.action=getScriptUrl();form.target='hidden-submit-frame';form.style.display='none';
-    const input=document.createElement('input');input.type='hidden';input.name='payload';input.value=JSON.stringify(booking);form.appendChild(input);
-    let iframe=document.getElementById('hidden-submit-frame');
-    if(!iframe){iframe=document.createElement('iframe');iframe.name='hidden-submit-frame';iframe.id='hidden-submit-frame';iframe.style.display='none';document.body.appendChild(iframe);}
-    document.body.appendChild(form);form.submit();form.remove();
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify(booking));
+    fetch(getScriptUrl(), {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    }).then(()=>console.log('Booking sent to sheet:', booking.ref))
+      .catch(err=>console.warn('Sheet write failed:', err));
   }catch(err){console.warn('Sheet write failed:',err);}
   btn.disabled=false;btn.textContent='Submit & generate invoice →';
   generateInvoice();setStep(4);
