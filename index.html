@@ -27,6 +27,8 @@
   color-scheme:light;
 }
 *{box-sizing:border-box}
+a{color:var(--accent);text-underline-offset:2px}
+a:hover{text-decoration:none}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);font-weight:400;line-height:1.55;margin:0}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
@@ -270,7 +272,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
     <button class="btn sm" id="addGuest" type="button">Add a guest</button>
     <div id="guestFlag"></div>
     <h3 style="margin:26px 0 8px">Choose your beds</h3>
-    <p class="small muted" style="margin-bottom:12px">Rooms are twin share — two king singles and an ensuite. Pick the beds you'd like and the Booking Officer will confirm them. Leave it blank and they'll allocate for you.</p>
+    <p class="small muted" style="margin-bottom:12px">Most rooms are twin share — two king singles and an ensuite. Room 6 has a double bed, and Rooms 3 and 7 take two people plus a toddler under 5. Pick what you'd like and the Booking Officer will confirm it. Leave it blank and they'll allocate for you.</p>
     <div id="bedPick"></div>
     <h3 style="margin:26px 0 8px">Anything else the Booking Officer should know</h3>
     <label class="f">
@@ -289,11 +291,13 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
   <div class="step scr" id="ms5" hidden style="border-top:0">
     <div class="steph"><span class="stepn">Step 5 of 6</span><h2>Before you submit</h2></div>
     <div class="panel">
-      <label class="ack"><input type="checkbox" class="reqack" id="a1"><span>I have read the Booking Information sheet and the Weekly Accommodation Rates.</span></label>
+      <label class="ack"><input type="checkbox" class="reqack" id="a1"><span>I have read the <a class="doclink" data-doc="booking" target="_blank" rel="noopener">Booking Information sheet and the Weekly Accommodation Rates</a>.</span></label>
+      <label class="ack"><input type="checkbox" class="reqack" id="a5"><span>I have read the <a class="doclink" data-doc="conduct" target="_blank" rel="noopener">Oldina Code of Conduct</a>, and I accept that it applies to everyone in my party for the whole of our stay.</span></label>
       <label class="ack"><input type="checkbox" class="reqack" id="a2"><span>I understand Oldina runs a set-up and service kitchen duty roster, and that for one breakfast and one dinner in a 7-day stay I'll set and clear the table and load and empty the dishwasher.</span></label>
       <label class="ack"><input type="checkbox" class="reqack" id="a3"><span><b>Snow conditions.</b> I understand that snow cover, weather and lift or run closures are outside the club's control, and that poor conditions are not grounds for a refund, credit or transfer.</span></label>
       <label class="ack"><input type="checkbox" class="reqack" id="a4"><span><b>Payment authority.</b> I authorise Oldina Ski Club to charge the card I provide at the next step for 50% of the total on confirmation of my booking, and for the balance 30 days before my arrival date. I have read the cancellation policy.</span></label>
     </div>
+    <div class="panel" id="docList" style="margin-top:12px"></div>
     <div class="navrow" data-nav="5"></div>
   </div>
 
@@ -414,12 +418,21 @@ const WINDOWS={
   short: {member:'2027-03-19T09:00',nominee:'2027-03-19T09:00',nonmember:'2027-03-27T09:00'}
 };
 /* PLACEHOLDER — real room list and bed count to be confirmed by the club */
+/* Room types from the club. A family room's third place is only for a
+   toddler under 5 — it is not a general third bed, so capacity alone
+   can't express it. */
 const ROOMS=[
-  {id:'R1',name:'Room 1',cap:2},{id:'R2',name:'Room 2',cap:2},
-  {id:'R3',name:'Room 3',cap:2},{id:'R4',name:'Room 4',cap:2},
-  {id:'R5',name:'Room 5',cap:2},{id:'R6',name:'Room 6',cap:2},
-  {id:'R7',name:'Room 7',cap:3},{id:'R8',name:'Room 8',cap:2}
+  {id:'R1',name:'Room 1',cap:2,type:'twin'},
+  {id:'R2',name:'Room 2',cap:2,type:'twin'},
+  {id:'R3',name:'Room 3',cap:3,type:'family',toddlerOnly:true},
+  {id:'R4',name:'Room 4',cap:2,type:'twin'},
+  {id:'R5',name:'Room 5',cap:2,type:'twin'},
+  {id:'R6',name:'Room 6',cap:2,type:'double'},
+  {id:'R7',name:'Room 7',cap:3,type:'family',toddlerOnly:true},
+  {id:'R8',name:'Room 8',cap:2,type:'twin'}
 ];
+const ROOM_DESC={twin:'Twin — two king singles',double:'Double bed',family:'Family — 2 plus a toddler under 5'};
+const TODDLER_MAX_AGE=5;
 const MAX_SINGLE_SUPP=2;
 /* Invented test members */
 const MEMBERS=[
@@ -780,18 +793,43 @@ function renderAvail(){
    because the Officer allocates in order of receipt — so what the member
    sees is what is unallocated now, not a reservation. Infants don't take a
    bed; a single supplement takes the whole room, so two. */
-/* Rooms are twin share except Room 7, which sleeps three. Capacity lives on
-   each room rather than as a single number, so the club can change it. */
+/* Capacity lives on each room rather than as a single number, so the club
+   can change it. ALL_BEDS counts the two toddler places; ALL_ROOMS doesn't
+   care. The 14-a-night cap below binds before either of them. */
 const ALL_ROOMS=ROOMS.length;
 const ALL_BEDS=ROOMS.reduce((n,r)=>n+r.cap,0);
 /* The lodge sleeps 14 a night. The rooms would hold more, so this cap binds
    first and is what availability is counted against. At most two single
    supplements a night across the whole lodge. */
+/* Club documents, from oldinaperisher.com.au. These are the 2026 editions —
+   whoever re-dates the season tab re-points these at the new season's PDFs,
+   so they live here rather than being buried in the markup. */
+const DOCS={
+  booking :{url:'https://www.oldinaperisher.com.au/s/2026-Oldina-Rates-and-Booking-form-with-Info-and-Calendar-2026-V1-25012026.pdf',
+            label:'Booking Information and Rates'},
+  conduct :{url:'https://www.oldinaperisher.com.au/s/Oldina-Ski-Club-CoOperative-Code-of-Conduct-2026-Finaldocx.pdf',
+            label:'Oldina Code of Conduct'},
+  safety  :{url:'https://www.oldinaperisher.com.au/s/Conventions-and-Safety-at-Perisher-Ski-Resort-2025.pdf',
+            label:'Conventions and Safety at Perisher'},
+  avail   :{url:'https://www.oldinaperisher.com.au/availability',label:'Lodge availability'}
+};
 const LODGE_CAP=14;
 const capOf=ids=>ids.reduce((n,id)=>n+(ROOMS.find(r=>r.id===id)||{cap:0}).cap,0);
+/* Places that anyone can take — a family room's third is toddler-only */
+const openCapOf=ids=>ids.reduce((n,id)=>{const r=ROOMS.find(x=>x.id===id);if(!r)return n;return n+(r.toddlerOnly?r.cap-1:r.cap)},0);
+function toddlerCount(){
+  const ref=$('arr').value||SEASONS[0].s;
+  return guests.filter(g=>g.dob&&ageOn(g.dob,ref)<TODDLER_MAX_AGE&&bandOf(g.dob,ref)!=='infant').length;
+}
+/* Under-3s are free and sleep with their parents, so they take no place at
+   all; a 3 or 4 year old needs the toddler place in a family room. */
+function toddlersNeedingAPlace(){
+  const ref=$('arr').value||SEASONS[0].s;
+  return guests.filter(g=>g.dob&&bandOf(g.dob,ref)==='child'&&ageOn(g.dob,ref)<TODDLER_MAX_AGE).length;
+}
 /* Fewest rooms that would sleep this many, largest rooms first */
 function minRoomsFor(pax){
-  const caps=ROOMS.map(r=>r.cap).sort((a,b)=>b-a);
+  const caps=ROOMS.map(r=>r.toddlerOnly?r.cap-1:r.cap).sort((a,b)=>b-a);
   let left=pax,n=0;
   for(const c of caps){if(left<=0)break;left-=c;n++}
   return left>0?null:n;
@@ -829,12 +867,25 @@ function availability(arr,dep){
 /* Fewest free rooms that will sleep the party, largest first. Used when the
    member leaves it to the club, and to re-seat them if their choice is gone
    by the time the Officer gets to it. */
-function autoAllocate(arr,dep,pax,exclude){
+/* Allocation fills ordinary beds first and only reaches for a family room
+   when the party has a toddler to put in one — a family room's third place
+   can't be sold to anybody else, so handing one to a couple takes it away
+   from the family who needs it and gains the club nothing. `tod` is how
+   many 3-and-4 year olds need that place; under-3s sleep with a parent. */
+function autoAllocate(arr,dep,pax,exclude,tod){
+  tod=tod||0;
   const taken=roomsTakenMap(arr,dep);
-  const free=ROOMS.filter(r=>!taken[r.id]&&!(exclude||[]).includes(r.id)).sort((a,b)=>b.cap-a.cap);
-  const out=[];let left=pax;
-  for(const r of free){if(left<=0)break;out.push(r.id);left-=r.cap}
-  return left>0?[]:out;
+  const free=ROOMS.filter(r=>!taken[r.id]&&!(exclude||[]).includes(r.id));
+  const family=free.filter(r=>r.toddlerOnly);
+  const plain =free.filter(r=>!r.toddlerOnly).sort((a,b)=>b.cap-a.cap);
+  const out=[];let left=pax,needTod=Math.min(tod,family.length);
+  /* a family room taken for a toddler also sleeps two, so count it in */
+  for(let i=0;i<needTod;i++){out.push(family[i].id);left-=family[i].cap-1}
+  for(const r of plain){if(left<=0)break;out.push(r.id);left-=r.cap}
+  /* only if ordinary rooms run out do we spend the remaining family rooms */
+  for(let i=needTod;i<family.length&&left>0;i++){out.push(family[i].id);left-=family[i].cap-1}
+  if(left>0||tod>family.length)return [];
+  return out;
 }
 function roomsTakenMap(arr,dep){
   const nts=nightsList(arr,dep),out={};
@@ -883,20 +934,25 @@ function renderBedPick(){
   const html=`<div class="beds">${ROOMS.map(room=>{
     const isTaken=taken[room.id],mine=chosenBeds.includes(room.id);
     return `<button type="button" class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-pick="${room.id}" ${isTaken?'disabled':''}>
-      <b>${room.name}</b><span class="muted">${isTaken?'Taken':(mine?'Yours':'Sleeps '+room.cap)}</span></button>`;
+      <b>${room.name}</b><span class="muted">${isTaken?'Taken':ROOM_DESC[room.type]}</span></button>`;
   }).join('')}</div>`;
-  const got=capOf(chosenBeds);
-  const ok=chosenBeds.length&&got>=pax;
-  const slack=got-pax;
+  const tod=toddlersNeedingAPlace();
+  const adults=pax-tod;
+  const got=openCapOf(chosenBeds);
+  const todPlaces=chosenBeds.filter(id=>(ROOMS.find(r=>r.id===id)||{}).toddlerOnly).length;
+  const slack=got-adults;
+  const todShort=tod>todPlaces;
   $('bedPick').innerHTML=html+
-    `<div class="flag ${!chosenBeds.length?'warn':got<pax?'stop':slack>=2?'warn':'ok'}">
+    `<div class="flag ${!chosenBeds.length?'warn':(got<adults||todShort)?'stop':slack>=2?'warn':'ok'}">
       <div>${!chosenBeds.length
-        ? `<b>No rooms chosen.</b> ${pax} guest${pax===1?'':'s'} ${pax===1?'needs':'need'} ${need} room${need===1?'':'s'}. Pick above, or leave it to the Booking Officer.`
-        : got<pax
-        ? `<b>Sleeps ${got}, you have ${pax}.</b> Choose another room — Room 7 sleeps three, the rest sleep two.`
+        ? `<b>No rooms chosen.</b> ${pax} guest${pax===1?'':'s'} ${pax===1?'needs':'need'} about ${need} room${need===1?'':'s'}. Pick above, or leave it to the Booking Officer.`
+        : got<adults
+        ? `<b>Sleeps ${got}, you have ${adults} needing a bed.</b> Choose another room.`
+        : todShort
+        ? `<b>${tod} toddler${tod===1?'':'s'} under ${TODDLER_MAX_AGE}, and ${todPlaces} family room${todPlaces===1?'':'s'} chosen.</b> Rooms 3 and 7 take a toddler alongside two adults — pick one of those.`
         : slack>=2
-        ? `<b>${chosenBeds.length} rooms, sleeping ${got}, for ${pax} guest${pax===1?'':'s'}.</b> That leaves ${slack} beds the club can't sell. The Officer may trim this to ${need}.`
-        : `<b>${chosenBeds.length} room${chosenBeds.length===1?'':'s'} chosen, sleeping ${got}, for ${pax} guest${pax===1?'':'s'}.</b> The Booking Officer confirms when they allocate — if someone ahead of you asked for the same room, they may move you.`}</div>
+        ? `<b>${chosenBeds.length} rooms for ${pax} guest${pax===1?'':'s'}.</b> That leaves ${slack} beds the club can't sell. The Officer may trim this.`
+        : `<b>${chosenBeds.length} room${chosenBeds.length===1?'':'s'} chosen for ${pax} guest${pax===1?'':'s'}.</b> The Booking Officer confirms when they allocate — if someone ahead of you asked for the same room, they may move you.`}</div>
     </div>`;
 }
 
@@ -1093,7 +1149,7 @@ function submit(){
   const arr2=arr,dep2=dep;
   const now=new Date();
   const ref='OLD-2027-'+String(44+requests.length-3).padStart(4,'0');
-  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:headcount(),supps:suppsWanted(),total:q.total,received:now.toISOString().slice(0,19),status:'queued',rooms:(chosenBeds.length?[...chosenBeds]:autoAllocate(arr,dep,headcount(),[])),subscription:subDue(),requestedBeds:[...chosenBeds],notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
+  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:headcount(),supps:suppsWanted(),total:q.total,received:now.toISOString().slice(0,19),status:'queued',rooms:(chosenBeds.length?[...chosenBeds]:autoAllocate(arr,dep,headcount(),[],toddlersNeedingAPlace())),subscription:subDue(),requestedBeds:[...chosenBeds],notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
   const dep50=Math.round(q.total*50)/100;
   $('result').innerHTML='';
   STEPS.forEach(s=>{$('ms'+s.n).hidden=true});
@@ -1181,7 +1237,7 @@ function renderDetail(){
       <div class="beds">${ROOMS.map(room=>{
         const isTaken=taken[room.id],mine=(r.rooms||[]).includes(room.id);
         return `<button class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-room="${room.id}" ${isTaken?'disabled':''}>
-          <b>${room.name}</b><span class="muted">${isTaken?taken[room.id]:(mine?'Allocated':'Sleeps '+room.cap)}</span></button>`;
+          <b>${room.name}</b><span class="muted">${isTaken?taken[room.id]:(mine?'Allocated':ROOM_DESC[room.type])}</span></button>`;
       }).join('')}</div>
     </details>
     <div class="panel" style="margin-top:18px">
@@ -1473,6 +1529,17 @@ $('member').addEventListener('click',e=>{
   if(p){goStep(+p.dataset.step);return}
   if(e.target.id==='again'){furthest=1;goStep(1)}
 });
+function renderDocs(){
+  /* One source for every link to a club document: the hrefs in the
+     acknowledgements and the reading list both come from DOCS. */
+  document.querySelectorAll('.doclink').forEach(a=>{
+    const doc=DOCS[a.dataset.doc]; if(doc)a.href=doc.url;
+  });
+  const list=$('docList'); if(!list)return;
+  list.innerHTML=`<div class="xs" style="color:var(--muted);margin-bottom:8px">The club's documents, if you want them open alongside this form</div>`+
+    Object.keys(DOCS).map(k=>`<div style="padding:5px 0;font-size:13px">
+      <a href="${DOCS[k].url}" target="_blank" rel="noopener">${DOCS[k].label}</a></div>`).join('');
+}
 document.querySelectorAll('.reqack').forEach(a=>a.addEventListener('change',()=>{$('result').innerHTML=''}));
 
 $('packDate').addEventListener('change',renderPack);
@@ -1699,5 +1766,6 @@ $('availTable').addEventListener('click',e=>{
 /* ---------------- Boot ---------------- */
 renderMembers();applyOption();checkDates();renderGuests();quote();pmFields();
 renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();renderOccupancy();renderPack();
-renderRateNote();renderBedPick();renderAvail();renderAvailTable();renderNav();renderProg();goStep(1);
+renderRateNote();renderBedPick();renderAvail();renderAvailTable();renderDocs();
+renderNav();renderProg();goStep(1);
 </script>
