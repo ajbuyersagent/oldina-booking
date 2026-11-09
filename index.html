@@ -231,6 +231,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
   <div class="step scr" id="ms3" hidden style="border-top:0">
     <div class="steph"><span class="stepn">Step 3 of 6</span><h2>Guests</h2></div>
     <p class="small muted" style="margin-bottom:14px">A full name is required for every guest — the bed-night register the club files with National Parks is built from them.</p>
+    <div id="rateNote"></div>
     <div id="guests"></div>
     <button class="btn sm" id="addGuest" type="button">Add a guest</button>
     <div id="guestFlag"></div>
@@ -465,7 +466,7 @@ function priceStay(arr,dep,guests){
 /* ---------------- State ---------------- */
 let guests=[
   {first:'Harriet',last:'Vance',dob:'1968-04-12',member:true,supp:false,diet:''},
-  {first:'Jonah',last:'Vance',dob:'2013-09-02',member:true,supp:false,diet:'No nuts'}
+  {first:'Jonah',last:'Vance',dob:'2013-09-02',member:false,supp:false,diet:'No nuts'}
 ];
 let requests=[
   {ref:'OLD-2027-0041',member:'Priya Nandakumar',financial:true,arrears:0,arr:'2027-07-11',dep:'2027-07-18',pax:4,total:3348,received:'2027-03-06T09:00:14',status:'queued',beds:[],roomPref:'R3',roomPrefName:'Room 3',notes:'The two children in one room and us in the other, ideally next door. Happy with any floor.',diets:['Arun Nandakumar: coeliac']},
@@ -565,16 +566,14 @@ function syncMember(){
      The booking member is ticked automatically — they are guest one, and
      their own status is already established by the number they entered. */
   const eligible=!!(m&&(m.financial||lead.paySub));
-  /* Guests follow the booking member's status until someone says otherwise.
-     Defaulting them to non-member instead would make every family booking a
-     nominee booking, pushing it into a later window — and the club allows
-     only one nominee at a time, so that cannot be the intended reading.
-     Untick a guest to mark them a genuine nominee. */
-  guests.forEach(g=>{if(!g.memberSet)g.member=eligible});
-  if(eligible&&guests.length)guests[0].member=true;
+  /* Membership is personal and does not extend to a spouse or children.
+     Only the member whose number is on the booking gets member rates;
+     everyone else in the party pays non-member rates. Not a choice, so
+     there is no per-guest control. */
+  guests.forEach((g,i)=>{g.member=(i===0&&eligible)});
   /* The member's class decides which booking window applies, so the dates
      step has to be re-evaluated whenever the member changes. */
-  renderGuests();checkDates();quote();
+  renderGuests();renderRateNote();checkDates();quote();
 }
 function leadClass(){return(lead.rec&&(lead.rec.financial||lead.paySub))?'member':'nonmember'}
 
@@ -703,6 +702,13 @@ function renderRoomPref(){
     :`<p class="xs muted" style="margin-top:8px">All rooms are open for these dates. Rooms are allocated by the Booking Officer in order of receipt, so a preference is a request rather than a reservation.</p>`;
 }
 
+function renderRateNote(){
+  const el=$('rateNote');if(!el)return;
+  if(!lead.rec||!(lead.rec.financial||lead.paySub)){el.innerHTML='';return}
+  const others=guests.length-1;
+  el.innerHTML=`<div class="flag warn"><div><b>Member rates apply to ${lead.rec.name} only.</b> Membership doesn't extend to a spouse, partner or children — everyone else in the party is charged at non-member rates. If another guest is a member in their own right, they should make their own booking under their number.</div></div>`;
+}
+
 function renderGuests(){
   const ref=$('arr').value||'2027-07-04';
   $('guests').innerHTML=guests.map((g,i)=>{
@@ -714,7 +720,9 @@ function renderGuests(){
       :band==='infant'?`<span class="chip warn">Under 3 — $25 flat fee</span>`
       :band==='child'?`<span class="chip neu">Child, ${age} — child rate</span>`
       :`<span class="chip neu">Adult, ${age}</span>`;
-    const rateChip=(!g.dob||band==='infant')?'':`<span class="chip ${g.member?'ok':'warn'}">${g.member?'Member rate':'Non-member rate'}</span>`;
+    const rateChip=(!g.dob||band==='infant')?''
+      :g.member?`<span class="chip ok">Member rate</span>`
+      :`<span class="chip warn">Non-member rate</span>`;
     return `<div class="guest">
       <div class="guesth"><h3>Guest ${i+1}</h3><div class="row">${chip}${rateChip}${guests.length>1?`<button class="rm" data-rm="${i}" type="button">Remove</button>`:''}</div></div>
       <div class="grid g2">
@@ -725,7 +733,6 @@ function renderGuests(){
       <div class="grid" style="margin-top:12px">
         <label class="f">Allergies or dietary requirements<input data-k="diet" data-i="${i}" value="${g.diet}" placeholder="Leave blank if none"></label>
       </div>
-      ${band!=='infant'?`<label class="supp"><input type="checkbox" data-k="member" data-i="${i}" ${g.member?'checked':''} ${lead.rec&&lead.rec.financial?'':'disabled'}> This guest is a financial Oldina member${lead.rec&&lead.rec.financial?'':' — unavailable, the booking member is not financial'}</label>`:''}
       ${band==='adult'?`<label class="supp"><input type="checkbox" data-k="supp" data-i="${i}" ${g.supp?'checked':''}> Single supplement — book a whole room, no sharing</label>`:''}
     </div>`;
   }).join('');
@@ -1068,7 +1075,7 @@ $('arr').addEventListener('change',()=>{applyOption();checkDates();renderGuests(
 $('dep').addEventListener('change',()=>{checkDates();renderRoomPref();quote()});
 $('addGuest').addEventListener('click',()=>{
   guests.push({first:'',last:'',dob:'',member:false,supp:false,diet:''});
-  renderGuests();quote();
+  renderGuests();renderRateNote();checkDates();quote();
 });
 $('guests').addEventListener('input',e=>{
   const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined)return;
@@ -1079,12 +1086,11 @@ $('guests').addEventListener('input',e=>{
 $('guests').addEventListener('change',e=>{
   const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined)return;
   if(k==='supp'){guests[i].supp=e.target.checked;quote();return}
-  if(k==='member'){guests[i].member=e.target.checked;guests[i].memberSet=true;renderGuests();checkDates();quote();return}
   if(k==='supp'){guests[i].supp=e.target.checked;renderAvail();quote();return}
 });
 $('guests').addEventListener('click',e=>{
   const i=e.target.dataset.rm;if(i===undefined)return;
-  guests.splice(i,1);renderGuests();quote();
+  guests.splice(i,1);renderGuests();renderRateNote();checkDates();quote();
 });
 $('member').addEventListener('input',e=>{
   if(e.target.id==='ccNo')renderCardFlag('cc');
@@ -1291,5 +1297,5 @@ $('vCard').addEventListener('click',()=>showView('cardview'));
 /* ---------------- Boot ---------------- */
 renderMembers();applyOption();checkDates();renderGuests();quote();pmFields();
 renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();
-renderRoomPref();renderAvail();renderNav();renderProg();goStep(1);
+renderRateNote();renderRoomPref();renderAvail();renderNav();renderProg();goStep(1);
 </script>
