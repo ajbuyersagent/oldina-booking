@@ -1,0 +1,212 @@
+<title>Oldina Booking Flow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+<style>
+/* One page, four swim lanes. Who acts is the argument, so the lane a step
+   sits in carries more weight than the step itself. Club palette: white
+   ground, Poppins, muted purple accent from oldinaperisher.com.au. */
+:root{
+  --bg:#ffffff; --surface:#fbfafc; --line:#e6e3ea; --fg:#111013; --muted:#6b6672;
+  --accent:#896CA3; --accent-soft:#f2eef6;
+  --member:#2f6d8f; --member-soft:#eaf2f7;
+  --system:#2f7d5d; --system-soft:#eaf5f0;
+  --officer:#896CA3; --officer-soft:#f2eef6;
+  --pay:#9a6b1f; --pay-soft:#fbf3e4;
+  --stop:#a33a3a; --stop-soft:#f9ecec;
+  --font:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);margin:0;line-height:1.45}
+.wrap{max-width:1080px;margin:0 auto;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:32px 48px}
+h1{font-size:clamp(23px,3.4vw,31px);font-weight:500;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:6px 0 0;max-width:68ch}
+
+/* lane key */
+.key{display:flex;gap:16px;flex-wrap:wrap;margin:20px 0 6px;font-size:11px;color:var(--muted)}
+.key span{display:flex;align-items:center;gap:6px}
+.key i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+/* grid */
+.flow{display:grid;grid-template-columns:86px repeat(4,1fr);gap:5px;margin-top:14px;min-width:620px}
+.hd{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);padding:0 0 4px;text-align:center;font-weight:500}
+.hd.t{text-align:left}
+.scroll{overflow-x:auto;padding-bottom:4px}
+
+.stage{grid-column:1;display:flex;align-items:center;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);font-weight:500;padding-right:6px}
+.band{grid-column:1/-1;border-top:1px solid var(--line);margin:7px 0 2px}
+
+.box{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12px;background:var(--surface);min-width:0}
+.box b{display:block;font-weight:500;font-size:12px;margin-bottom:1px}
+.box span{color:var(--muted);font-size:11px;display:block;line-height:1.35}
+.box.m{background:var(--member-soft);border-color:var(--member);color:var(--member)}
+.box.m b{color:var(--member)}
+.box.s{background:var(--system-soft);border-color:var(--system);color:var(--system)}
+.box.s b{color:var(--system)}
+.box.o{background:var(--officer-soft);border-color:var(--officer);color:var(--officer)}
+.box.o b{color:var(--officer)}
+.box.p{background:var(--pay-soft);border-color:var(--pay);color:var(--pay)}
+.box.p b{color:var(--pay)}
+.box.x{background:var(--stop-soft);border-color:var(--stop);color:var(--stop)}
+.box.x b{color:var(--stop)}
+.box.ghost{background:transparent;border-style:dashed;border-color:var(--line);color:var(--muted)}
+.box.ghost b{color:var(--muted)}
+.empty{min-width:0}
+
+.gate{grid-column:2/-1;border:1px dashed var(--accent);border-radius:9px;padding:7px 11px;font-size:11px;color:var(--accent);background:var(--accent-soft)}
+.gate b{font-weight:500}
+
+.note{margin-top:22px;border-top:1px solid var(--line);padding-top:16px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.note h3{margin:0 0 3px;font-size:13px;font-weight:500}
+.note p{margin:0;font-size:12px;color:var(--muted)}
+.foot{margin-top:22px;font-size:11px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:560px){.wrap{padding-block:22px 36px}}
+@media print{body{font-size:11px}.wrap{padding-block:0}.scroll{overflow:visible}.flow{min-width:0}}
+</style>
+
+<div class="wrap">
+
+<h1>Oldina booking — how it works</h1>
+<p class="sub">Every step from a member wanting a bed to the money in the club's account. Colour shows who acts. The Booking Officer appears once.</p>
+
+<div class="key">
+  <span><i style="background:var(--member-soft);border:1px solid var(--member)"></i>Member</span>
+  <span><i style="background:var(--system-soft);border:1px solid var(--system)"></i>System — automatic</span>
+  <span><i style="background:var(--officer-soft);border:1px solid var(--officer)"></i>Booking Officer</span>
+  <span><i style="background:var(--pay-soft);border:1px solid var(--pay)"></i>Payment provider</span>
+  <span><i style="background:var(--stop-soft);border:1px solid var(--stop)"></i>Where a booking is lost</span>
+</div>
+
+<div class="scroll">
+<div class="flow">
+
+  <div class="hd t">Stage</div>
+  <div class="hd">Member</div>
+  <div class="hd">System</div>
+  <div class="hd">Booking Officer</div>
+  <div class="hd">Payment provider</div>
+
+  <!-- REQUEST -->
+  <div class="band"></div>
+  <div class="stage">Request</div>
+  <div class="box m"><b>Enters member number</b><span>Name, email and mobile fill from the register</span></div>
+  <div class="box s"><b>Checks the register</b><span>Unfinancial? Offered to pay the subscription here</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="empty"></div>
+  <div class="box s"><b>Checks the booking window</b><span>Members, then nominees, then non-members</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="box m"><b>Picks dates on the calendar</b><span>Whole weeks or a couple of nights midweek</span></div>
+  <div class="box s"><b>Shows places left</b><span>Per night, against the 14-person limit</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="box m"><b>Adds guests, picks rooms</b><span>Dates of birth set the rate band</span></div>
+  <div class="box s"><b>Prices the stay</b><span>Season, member status, child, supplement</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="box m"><b>Agrees terms, leaves a card</b><span>Including snow conditions and kitchen duty</span></div>
+  <div class="box s"><b>Queues it, time-stamped</b><span>Order of receipt decides allocation</span></div>
+  <div class="empty"></div>
+  <div class="box p"><b>Stores the card</b><span>Club holds a token, never the number</span></div>
+
+  <div class="gate"><b>Nothing is charged.</b> A request that isn't allocated is never charged, and the card details are discarded.</div>
+
+  <!-- CONFIRM -->
+  <div class="band"></div>
+  <div class="stage">Confirm</div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+  <div class="box o"><b>Confirms the booking</b><span>Rooms already set. Only intervenes if one has been taken</span></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="empty"></div>
+  <div class="box s"><b>Sends the confirmation</b><span>Reference, dates, rooms, totals, arrival notes. Room allocation to the Lodge Manager</span></div>
+  <div class="empty"></div>
+  <div class="box p"><b>Charges 50% deposit</b><span>Plus the subscription, if it was added</span></div>
+
+  <div class="gate"><b>No door code yet.</b> The confirmation tells the member they'll get it when the balance is taken. Holding it back is the club's existing lever for getting paid — the system keeps it, it just stops being something anyone has to remember.</div>
+
+  <!-- PAYMENT -->
+  <div class="band"></div>
+  <div class="stage">Balance</div>
+  <div class="empty"></div>
+  <div class="box s"><b>37 days out — notice</b><span>Amount, date, link to update the card</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="empty"></div>
+  <div class="box s"><b>30 days out — debit</b><span>Paid in full</span></div>
+  <div class="empty"></div>
+  <div class="box p"><b>Takes the balance</b><span>From the stored card</span></div>
+
+  <div class="stage"></div>
+  <div class="empty"></div>
+  <div class="box s"><b>Receipt and door code</b><span>Released on full payment, not before</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <div class="gate"><b>If the card declines</b> — the member fixes it themselves. The Officer is told but never has to chase.</div>
+
+  <div class="stage">If unpaid</div>
+  <div class="box m"><b>Updates their card</b><span>One button in the email, pays on the spot</span></div>
+  <div class="box s"><b>Warning email</b><span>States the cancellation date and counts the time left. The page it opens runs a live timer</span></div>
+  <div class="box ghost"><b>Notified only</b><span>No action required</span></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="empty"></div>
+  <div class="box s"><b>Retries at 27 and 24 days</b><span>Each retry re-sends the warning with less time on it</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <div class="stage"></div>
+  <div class="empty"></div>
+  <div class="box x"><b>21 days out, 9am — cancelled</b><span>Rooms released, member told. No door code was ever sent</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+  <!-- ARRIVAL -->
+  <div class="band"></div>
+  <div class="stage">Arrival</div>
+  <div class="empty"></div>
+  <div class="box s"><b>Thursday — changeover email</b><span>To the Lodge Manager: Friday and Sunday arrivals and departures, rooms, diets, headcount</span></div>
+  <div class="empty"></div>
+  <div class="empty"></div>
+
+</div>
+</div>
+
+<div class="note">
+  <div>
+    <h3>Where the Officer went</h3>
+    <p>Twenty steps today, eighteen of them manual. Under this flow the Officer confirms, and approves changes and cancellations. Everything else runs without them.</p>
+  </div>
+  <div>
+    <h3>Why nothing is chased</h3>
+    <p>The card is taken before the booking is queued, so there is no invoice to ignore. The door code still arrives only on full payment. Every branch ends by itself — paid in full, or cancelled at 21 days.</p>
+  </div>
+  <div>
+    <h3>What the club controls</h3>
+    <p>Seasons, rates, booking windows, rooms, the door code and the member register all live on spreadsheet tabs. Re-dating a season or rotating the code needs no developer.</p>
+  </div>
+</div>
+
+<p class="foot">Lodge capacity 14 a night across 8 rooms — five twin, one double, and two family rooms that take two people plus a toddler under 5 — with at most two single supplements a night. Minimum stay two nights. Rooms are allocated in order of receipt, so availability shown to a member is a guide, not a reservation.</p>
+
+</div>
