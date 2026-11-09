@@ -470,7 +470,7 @@ function ageOf(dob,ref){if(!dob)return'';return Math.max(0,Math.floor((d(ref)-d(
 /* The member number is what drives the booking: it resolves the member
    record, which in turn decides the rate each guest pays, which booking
    window applies, and whether the nominee allowance is already used. */
-let lead={isMember:true,rec:null,filledFrom:null,paySub:false};
+let lead={isMember:true,rec:null,filledFrom:null,filledGuest:null,paySub:false};
 /* Subscription owing, only when the member has opted to pay it here */
 function subDue(){return(lead.rec&&!lead.rec.financial&&lead.paySub)?lead.rec.arrears:0}
 
@@ -510,10 +510,24 @@ function syncMember(){
   if(m&&lead.filledFrom!==m.no){
     lead.paySub=false;
     $('leadName').value=m.name;$('email').value=m.email;$('mobile').value=m.mobile;
+    /* The member is guest one. Fill them in so nobody types their own name
+       twice — but never overwrite a name somebody has already edited. */
+    const parts=m.name.trim().split(/\s+/);
+    const first=parts.shift()||'',last=parts.join(' ');
+    if(!guests.length)guests.push({first:'',last:'',dob:'',member:true,supp:false,diet:''});
+    const g0=guests[0];
+    const wasRegister=lead.filledGuest&&g0.first===lead.filledGuest.first&&g0.last===lead.filledGuest.last;
+    if(wasRegister||(!g0.first.trim()&&!g0.last.trim())){
+      g0.first=first;g0.last=last;
+      lead.filledGuest={first,last};
+    }
     lead.filledFrom=m.no;
   }else if(!m&&lead.filledFrom){
     $('leadName').value='';$('email').value='';$('mobile').value='';
-    lead.filledFrom=null;
+    if(lead.filledGuest&&guests.length&&guests[0].first===lead.filledGuest.first&&guests[0].last===lead.filledGuest.last){
+      guests[0].first='';guests[0].last='';
+    }
+    lead.filledFrom=null;lead.filledGuest=null;
   }
   $('fromReg').hidden=!m;
   $('memberFlag').innerHTML=h;
@@ -527,7 +541,28 @@ function syncMember(){
   if(eligible&&guests.length)guests[0].member=true;
   renderGuests();quote();
 }
-function leadClass(){return(lead.rec&&lead.rec.financial)?'member':'nonmember'}
+function leadClass(){return(lead.rec&&(lead.rec.financial||lead.paySub))?'member':'nonmember'}
+
+/* ---------------- Booking windows ----------------
+   Requests open in stages: members first, then members' nominees, then
+   non-members, with a separate and later pair of dates for stays under 7
+   nights. A party that includes a non-member is a nominee booking and waits
+   for the nominee date, even though a member is making it. */
+let SIM_NOW='2027-04-01T09:00';          // preview only — stands in for "now"
+function bookingClass(){
+  if(leadClass()==='nonmember')return'nonmember';
+  const hasNominee=guests.some(g=>bandOf(g.dob,$('arr').value||SEASONS[0].s)!=='infant'&&!g.member);
+  return hasNominee?'nominee':'member';
+}
+function windowFor(cls,nights){return(nights>=7?WINDOWS.week:WINDOWS.short)[cls]}
+function windowOpen(cls,nights){
+  const w=windowFor(cls,nights);
+  return !w||SIM_NOW>=w;
+}
+function fmtWindow(w){
+  return new Date(w+':00Z').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'});
+}
+const CLASS_LABEL={member:'Members',nominee:"Members' nominees",nonmember:'Non-members'};
 
 function applyOption(){
   const o=$('opt').value,a=$('arr').value;if(!a||o==='custom')return;
@@ -540,9 +575,9 @@ function checkDates(){
   if(a&&b){
     const n=nightsBetween(a,b);
     const o=$('opt').value;
-    const cls=leadClass();
-    const w=(n>=7?WINDOWS.week:WINDOWS.short)[cls];
-    const wd=new Date(w+':00Z');
+    const cls=bookingClass();
+    const w=windowFor(cls,n);
+    const open=windowOpen(cls,n);
     const dow=d(a).getUTCDay();
     const bits=[];
     if(n>0)bits.push(`<span class="chip neu">${n} night${n===1?'':'s'}</span>`);
@@ -551,7 +586,9 @@ function checkDates(){
     holidaysIn(a,b).forEach(h=>bits.push(`<span class="chip warn">${h.label}</span>`));
     if(o==='week'&&dow!==0)bits.push(`<span class="chip warn">Weekly bookings run Sunday to Sunday</span>`);
     h=`<div class="row" style="margin-top:12px">${bits.join('')}</div>`;
-    h+=`<div class="flag ok"><div><b>Bookings are open.</b> ${n>=7?'Seven-night':'Short-stay'} requests for ${cls==='member'?'members':'non-members'} opened ${wd.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'})} at 9am. Your request will be time-stamped on submission and queued in order of receipt.</div></div>`;
+    h+=open
+      ?`<div class="flag ok"><div><b>Bookings are open.</b> ${n>=7?'Seven-night':'Short-stay'} requests for ${CLASS_LABEL[cls].toLowerCase()} opened ${fmtWindow(w)} at 9am. Your request will be time-stamped on submission and queued in order of receipt.</div></div>`
+      :`<div class="flag stop"><div><b>Not open yet.</b> ${n>=7?'Seven-night':'Short-stay'} requests for ${CLASS_LABEL[cls].toLowerCase()} open <b>9am ${fmtWindow(w)}</b>.${cls==='nominee'?' Your party includes a non-member, which makes this a nominee booking — nominees open a week after members.':cls==='nonmember'?' Members book first.':''} Come back then and your request will be time-stamped in order of receipt.</div></div>`;
   }
   $('dateFlag').innerHTML=h;
 }
@@ -881,6 +918,19 @@ function renderSeasonCfg(){
       <td><input type="date" data-si="${i}" data-sk="e" value="${s.e}"></td>
       <td class="muted">${s.note||''}</td></tr>`).join('')}
     </tbody></table></div>
+    <h3 style="margin:22px 0 10px">Booking windows</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Who</th><th>7 nights or more</th><th>Under 7 nights</th></tr></thead>
+      <tbody>${['member','nominee','nonmember'].map(k=>`<tr>
+        <td>${CLASS_LABEL[k]}</td>
+        <td class="num">${fmtWindow(WINDOWS.week[k])}<br><span class="xs muted">${windowOpen(k,7)?'Open':'Not open yet'}</span></td>
+        <td class="num">${fmtWindow(WINDOWS.short[k])}<br><span class="xs muted">${windowOpen(k,2)?'Open':'Not open yet'}</span></td></tr>`).join('')}
+      </tbody></table></div>
+    <label class="f" style="margin-top:14px;max-width:280px">Simulate today's date
+      <input type="date" id="simNow" value="${SIM_NOW.slice(0,10)}">
+    </label>
+    <p class="xs muted" style="margin-top:6px">Preview only — stands in for the real clock so the staged windows can be demonstrated. Set it to 10 March 2027 to see a non-member turned away while members book.</p>
+
     <h3 style="margin:22px 0 10px">NSW school holidays</h3>
     <div class="tw"><table>
       <thead><tr><th>Break</th><th>First day</th><th>Last day</th><th>Falls in</th></tr></thead>
@@ -935,7 +985,7 @@ $('guests').addEventListener('input',e=>{
 $('guests').addEventListener('change',e=>{
   const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined)return;
   if(k==='supp'){guests[i].supp=e.target.checked;quote();return}
-  if(k==='member'){guests[i].member=e.target.checked;renderGuests();quote();return}
+  if(k==='member'){guests[i].member=e.target.checked;renderGuests();checkDates();quote();return}
 });
 $('guests').addEventListener('click',e=>{
   const i=e.target.dataset.rm;if(i===undefined)return;
@@ -986,6 +1036,7 @@ $('cardPanel').addEventListener('click',e=>{
 });
 
 $('seasonCfg').addEventListener('change',e=>{
+  if(e.target.id==='simNow'){SIM_NOW=e.target.value+'T09:00';renderSeasonCfg();checkDates();return}
   const i=e.target.dataset.si,k=e.target.dataset.sk;
   if(i===undefined)return;
   SEASONS[i][k]=e.target.value;
@@ -1048,6 +1099,10 @@ function stepErrors(n){
     if(!a||!b)e.push('Choose an arrival and a departure date.');
     else if(nightsBetween(a,b)<2)e.push('Minimum stay is 2 nights.');
     else if(nightsList(a,b).some(x=>!seasonOf(x)))e.push('Those dates fall outside the season.');
+    else{
+      const n=nightsBetween(a,b),cls=leadClass();
+      if(!windowOpen(cls,n))e.push(CLASS_LABEL[cls]+' cannot book '+(n>=7?'seven-night':'short')+' stays until 9am '+fmtWindow(windowFor(cls,n))+'.');
+    }
   }
   if(n===3){
     if(!guests.length)e.push('Add at least one guest.');
@@ -1057,6 +1112,8 @@ function stepErrors(n){
   if(n===4){
     const q=priceStay($('arr').value,$('dep').value,guests.map(g=>({...g,band:bandOf(g.dob,$('arr').value)})));
     q.issues.forEach(i=>e.push(i));
+    const cls=bookingClass(),nts=nightsBetween($('arr').value,$('dep').value);
+    if(!windowOpen(cls,nts))e.push('Your party includes a non-member, so this is a nominee booking. Nominee requests open 9am '+fmtWindow(windowFor(cls,nts))+'.');
   }
   if(n===5){
     const un=[...document.querySelectorAll('.reqack')].filter(a=>!a.checked).length;
