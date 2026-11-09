@@ -464,12 +464,23 @@ let selected=null;
 /* ---------------- Member view ---------------- */
 const $=id=>document.getElementById(id);
 
+/* Age on the arrival date, by the calendar. Dividing elapsed days by 365.25
+   drifts about half a day over eighteen years, which misclassifies anyone
+   whose birthday falls on or near the arrival date — a guest turning 18 that
+   day came out as a child, undercharging $260 for a high-season week. */
+function ageOn(dob,ref){
+  const b=d(dob),r=d(ref);
+  let a=r.getUTCFullYear()-b.getUTCFullYear();
+  const m=r.getUTCMonth()-b.getUTCMonth();
+  if(m<0||(m===0&&r.getUTCDate()<b.getUTCDate()))a--;
+  return a;
+}
 function bandOf(dob,ref){
   if(!dob)return 'adult';
-  const a=(d(ref)-d(dob))/(365.25*86400000);
+  const a=ageOn(dob,ref);
   if(a<3)return 'infant';if(a<18)return 'child';return 'adult';
 }
-function ageOf(dob,ref){if(!dob)return'';return Math.max(0,Math.floor((d(ref)-d(dob))/(365.25*86400000)))}
+function ageOf(dob,ref){if(!dob)return'';return Math.max(0,ageOn(dob,ref))}
 
 /* The member number is what drives the booking: it resolves the member
    record, which in turn decides the rate each guest pays, which booking
@@ -624,15 +635,21 @@ function renderRoomPref(){
 function renderGuests(){
   const ref=$('arr').value||'2027-07-04';
   $('guests').innerHTML=guests.map((g,i)=>{
+    /* Date of birth decides the rate band — under 3 a flat fee, 3 to 17 a
+       child rate, 18 and over an adult rate. Without it we show nothing
+       rather than defaulting to adult, which would quietly overcharge. */
     const band=bandOf(g.dob,ref),age=ageOf(g.dob,ref);
-    const chip=band==='infant'?'<span class="chip warn">Under 3 — $25 flat fee</span>':band==='child'?`<span class="chip neu">Child, ${age}</span>`:`<span class="chip neu">Adult</span>`;
-    const rateChip=band==='infant'?'':`<span class="chip ${g.member?'ok':'warn'}">${g.member?'Member rate':'Non-member rate'}</span>`;
+    const chip=!g.dob?'<span class="chip stop">Date of birth needed</span>'
+      :band==='infant'?`<span class="chip warn">Under 3 — $25 flat fee</span>`
+      :band==='child'?`<span class="chip neu">Child, ${age} — child rate</span>`
+      :`<span class="chip neu">Adult, ${age}</span>`;
+    const rateChip=(!g.dob||band==='infant')?'':`<span class="chip ${g.member?'ok':'warn'}">${g.member?'Member rate':'Non-member rate'}</span>`;
     return `<div class="guest">
       <div class="guesth"><h3>Guest ${i+1}</h3><div class="row">${chip}${rateChip}${guests.length>1?`<button class="rm" data-rm="${i}" type="button">Remove</button>`:''}</div></div>
       <div class="grid g2">
         <label class="f">First name<input data-k="first" data-i="${i}" value="${g.first}"></label>
         <label class="f">Surname<input data-k="last" data-i="${i}" value="${g.last}"></label>
-        <label class="f">Date of birth<input type="date" data-k="dob" data-i="${i}" value="${g.dob}"></label>
+        <label class="f">Date of birth<input type="date" data-k="dob" data-i="${i}" value="${g.dob}" max="${$('arr').value||''}"></label>
       </div>
       <div class="grid" style="margin-top:12px">
         <label class="f">Allergies or dietary requirements<input data-k="diet" data-i="${i}" value="${g.diet}" placeholder="Leave blank if none"></label>
@@ -750,6 +767,8 @@ function submit(){
   if(un)errs.push(un+' acknowledgement'+(un===1?'':'s')+' still to tick.');
   const noName=guests.filter(g=>!g.first.trim()||!g.last.trim()).length;
   if(noName)errs.push(noName+' guest'+(noName===1?'':'s')+' missing a full name.');
+  const noDob=guests.filter(g=>!g.dob).length;
+  if(noDob)errs.push(noDob+' guest'+(noDob===1?'':'s')+' missing a date of birth.');
   q.issues.forEach(i=>errs.push(i));
   if(errs.length){
     $('result').innerHTML=`<div class="flag stop"><div><b>Not submitted.</b><br>${errs.join('<br>')}</div></div>`;return;
@@ -1112,6 +1131,12 @@ function stepErrors(n){
     if(!guests.length)e.push('Add at least one guest.');
     const noName=guests.filter(g=>!g.first.trim()||!g.last.trim()).length;
     if(noName)e.push(noName+' guest'+(noName===1?'':'s')+' still need a full name.');
+    /* Without a date of birth we can't tell a child from an adult, and the
+       difference is $260 a week in high season. */
+    const noDob=guests.filter(g=>!g.dob).length;
+    if(noDob)e.push(noDob+' guest'+(noDob===1?'':'s')+' still need a date of birth — it decides whether they are charged at the adult, child or under-3 rate.');
+    const future=guests.filter(g=>g.dob&&g.dob>($('arr').value||'2027-07-04')).length;
+    if(future)e.push('A date of birth is after the arrival date. Check it.');
   }
   if(n===4){
     const q=priceStay($('arr').value,$('dep').value,guests.map(g=>({...g,band:bandOf(g.dob,$('arr').value)})));
