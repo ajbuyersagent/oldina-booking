@@ -470,7 +470,9 @@ function ageOf(dob,ref){if(!dob)return'';return Math.max(0,Math.floor((d(ref)-d(
 /* The member number is what drives the booking: it resolves the member
    record, which in turn decides the rate each guest pays, which booking
    window applies, and whether the nominee allowance is already used. */
-let lead={isMember:true,rec:null,filledFrom:null};
+let lead={isMember:true,rec:null,filledFrom:null,paySub:false};
+/* Subscription owing, only when the member has opted to pay it here */
+function subDue(){return(lead.rec&&!lead.rec.financial&&lead.paySub)?lead.rec.arrears:0}
 
 function renderMembers(){syncMember()}
 
@@ -491,7 +493,12 @@ function syncMember(){
   }else if(!m){
     h=`<div class="flag stop"><div><b>Member number ${no} not found.</b> Check the number on your subscription notice, or tick "I'm not a member" to book at non-member rates.</div></div>`;
   }else if(!m.financial){
-    h=`<div class="flag stop"><div><b>${m.name} — we can't take this booking yet.</b> Your annual subscription is unpaid, with ${money(m.arrears)} outstanding, and members must be financial before booking.<br><br>Settle your subscription and this clears immediately — email <b>bookings@oldinaperisher.com.au</b>. Your subscription is never charged to the card you give here; the two are kept separate.</div></div>`;
+    h=lead.paySub
+      ?`<div class="flag ok"><div><b>${m.name} — subscription added to this booking.</b> Your ${money(m.arrears)} subscription will be charged in full when your dates are confirmed, alongside the deposit. Member rates apply to this stay.
+         <label class="supp" style="margin-top:10px"><input type="checkbox" id="paySub" checked> Pay my annual subscription with this booking</label></div></div>`
+      :`<div class="flag stop"><div><b>${m.name} — we can't take this booking yet.</b> Your annual subscription is unpaid, with ${money(m.arrears)} outstanding, and members must be financial before booking.<br>
+         <label class="supp" style="margin-top:10px"><input type="checkbox" id="paySub"> <b>Pay my ${money(m.arrears)} subscription with this booking</b> — charged with your deposit, and member rates apply straight away</label>
+         <span class="xs" style="display:block;margin-top:8px">Or settle it separately with the Booking Officer at bookings@oldinaperisher.com.au and come back.</span></div></div>`;
   }else{
     const held=NOMINEES_HELD[m.no]||0;
     h=`<div class="flag ok"><div><b>${m.name} — financial member.</b> Member rates apply.${held?` You already have ${held} nominee booked this season, so additional non-members in this party pay non-member rates and are not covered by the nominee allowance.`:''}</div></div>`;
@@ -501,6 +508,7 @@ function syncMember(){
      a new number replaces the previous member's details rather than leaving
      them stranded; manual edits survive until the number itself changes. */
   if(m&&lead.filledFrom!==m.no){
+    lead.paySub=false;
     $('leadName').value=m.name;$('email').value=m.email;$('mobile').value=m.mobile;
     lead.filledFrom=m.no;
   }else if(!m&&lead.filledFrom){
@@ -514,7 +522,7 @@ function syncMember(){
      that guest is themselves marked as a member. Nominees are non-members.
      The booking member is ticked automatically — they are guest one, and
      their own status is already established by the number they entered. */
-  const eligible=!!(m&&m.financial);
+  const eligible=!!(m&&(m.financial||lead.paySub));
   guests.forEach(g=>{if(!eligible)g.member=false;else if(g.member===undefined)g.member=true});
   if(eligible&&guests.length)guests[0].member=true;
   renderGuests();quote();
@@ -615,18 +623,25 @@ function quote(){
   $('guestFlag').innerHTML=gf;
 
   if(!arr||!dep||q.nights<1){$('quote').innerHTML=`<p class="muted small">Choose your dates and add your guests to see the cost.</p>`;return}
+  /* The subscription is charged in full on confirmation, not split across the
+     deposit and balance — a half-paid subscription doesn't make anyone half
+     financial. Accommodation still splits 50/50 as the club's terms require. */
+  const sub=subDue();
   const dep50=Math.round(q.total*50)/100;
   const bal=q.total-dep50;
   const balDate=addDays(arr,-30);
   $('quote').innerHTML=`
    <div class="tw" style="margin-bottom:18px"><table>
      <thead><tr><th>Guest</th><th>Basis</th><th class="r">Amount</th></tr></thead>
-     <tbody>${q.lines.map(l=>`<tr><td>${l.who}</td><td class="muted">${l.detail}</td><td class="r num">${money(l.amt)}</td></tr>`).join('')}</tbody>
+     <tbody>${q.lines.map(l=>`<tr><td>${l.who}</td><td class="muted">${l.detail}</td><td class="r num">${money(l.amt)}</td></tr>`).join('')}
+     ${sub?`<tr><td>${lead.rec.name}</td><td class="muted">Annual subscription ${SEASON_YEAR} — charged in full on confirmation</td><td class="r num">${money(sub)}</td></tr>`:''}</tbody>
    </table></div>
    ${q.issues.map(i=>`<div class="flag stop"><div>${i}</div></div>`).join('')}
    <div class="panel" style="margin-top:16px">
-     <div class="tot"><span class="muted">Total, GST included</span><span class="num">${money(q.total)}</span></div>
-     <div class="tot"><span class="muted">Deposit, charged when your dates are confirmed</span><span class="num">${money(dep50)}</span></div>
+     ${sub?`<div class="tot"><span class="muted">Accommodation, GST included</span><span class="num">${money(q.total)}</span></div>
+     <div class="tot"><span class="muted">Annual subscription</span><span class="num">${money(sub)}</span></div>`:''}
+     <div class="tot"><span class="muted">${sub?'Total':'Total, GST included'}</span><span class="num">${money(q.total+sub)}</span></div>
+     <div class="tot"><span class="muted">Charged when your dates are confirmed${sub?' — deposit plus subscription':''}</span><span class="num">${money(dep50+sub)}</span></div>
      <div class="tot"><span class="muted">Balance, debited ${fmtDate(balDate)} — 30 days before arrival</span><span class="num">${money(bal)}</span></div>
      <div class="tot big"><span>Charged today</span><span class="num">$0.00</span></div>
    </div>
@@ -701,7 +716,7 @@ function submit(){
   const arr2=arr,dep2=dep;
   const now=new Date();
   const ref='OLD-2027-'+String(44+requests.length-3).padStart(4,'0');
-  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:guests.length,total:q.total,received:now.toISOString().slice(0,19),status:'queued',beds:[],roomPref:$('roomPref').value,roomPrefName:($('roomPref').selectedOptions[0]||{}).text||'',notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
+  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:guests.length,total:q.total,received:now.toISOString().slice(0,19),status:'queued',beds:[],subscription:subDue(),roomPref:$('roomPref').value,roomPrefName:($('roomPref').selectedOptions[0]||{}).text||'',notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
   const dep50=Math.round(q.total*50)/100;
   $('result').innerHTML='';
   STEPS.forEach(s=>{$('ms'+s.n).hidden=true});
@@ -758,9 +773,10 @@ function renderDetail(){
       <span class="chip neu num">${r.ref}</span>
       <span class="chip neu num">${fmtDate(r.arr)} → ${fmtDate(r.dep)}</span>
       <span class="chip neu">${r.pax} guest${r.pax===1?'':'s'}</span>
-      ${r.financial?'<span class="chip ok">Financial</span>':`<span class="chip stop">Arrears ${money(r.arrears)}</span>`}
+      ${r.financial?'<span class="chip ok">Financial</span>':(r.subscription?`<span class="chip ok">Subscription ${money(r.subscription)} included</span>`:`<span class="chip stop">Arrears ${money(r.arrears)}</span>`)}
     </div>
-    ${r.financial?'':`<div class="flag stop"><div><b>Subscription unpaid.</b> Non-member rates have been applied to this quote. Confirming does not charge the arrears — those are collected separately.</div></div>`}
+    ${(!r.financial&&r.subscription)?`<div class="flag ok"><div><b>Subscription paid with this booking.</b> ${money(r.subscription)} is charged in full on confirmation, alongside the deposit. Member rates have been applied. Flag it to the Treasurer so the subscription register is updated.</div></div>`:''}
+    ${(!r.financial&&!r.subscription)?`<div class="flag stop"><div><b>Subscription unpaid.</b> This request should not have reached allocation — check before confirming.</div></div>`:''}
     ${r.roomPref?`<div class="flag warn"><div><b>Room preference:</b> ${(r.roomPrefName||r.roomPref).replace(/&/g,'&amp;').replace(/</g,'&lt;')}${r.beds.length&&!ROOMS.filter(x=>x.id===r.roomPref).some(x=>x.beds.some(b=>r.beds.includes(b)))?' — not currently allocated to this room':''}</div></div>`:''}
     ${r.notes?`<div class="flag warn"><div><b>Note from the member</b><br>${r.notes.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`:''}
     ${(r.diets&&r.diets.length)?`<div class="flag warn"><div><b>Dietary requirements</b><br>${r.diets.map(x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>')}</div></div>`:''}
@@ -771,11 +787,12 @@ function renderDetail(){
     }).join('')}</div></div>`).join('')}
     <div class="panel" style="margin-top:18px">
       <div class="tot"><span class="muted">Total</span><span class="num">${money(r.total)}</span></div>
-      <div class="tot"><span class="muted">Charged on confirm</span><span class="num">${money(dep50)}</span></div>
+      ${r.subscription?`<div class="tot"><span class="muted">Annual subscription</span><span class="num">${money(r.subscription)}</span></div>`:''}
+      <div class="tot"><span class="muted">Charged on confirm</span><span class="num">${money(dep50+(r.subscription||0))}</span></div>
       <div class="tot"><span class="muted">Balance debits</span><span class="num">${fmtDate(addDays(r.arr,-30))}</span></div>
     </div>
     <div class="row" style="margin-top:18px">
-      <button class="btn solid" id="confirmBtn" ${r.beds.length!==r.pax?'disabled':''}>Confirm and charge ${money(dep50)}</button>
+      <button class="btn solid" id="confirmBtn" ${r.beds.length!==r.pax?'disabled':''}>Confirm and charge ${money(dep50+(r.subscription||0))}</button>
       <span class="small muted">${r.beds.length}/${r.pax} beds allocated${r.beds.length!==r.pax?' — allocate all beds to confirm':''}</span>
     </div>
     <div id="confirmed"></div>`;
@@ -901,6 +918,7 @@ function renderRegister(){
 /* ---------------- Events ---------------- */
 document.querySelectorAll('input[name="who"]').forEach(r=>r.addEventListener('change',syncMember));
 $('memberNo').addEventListener('input',syncMember);
+$('memberFlag').addEventListener('change',e=>{if(e.target.id==='paySub'){lead.paySub=e.target.checked;syncMember();const f=$('stepErr');if(f)f.remove()}});
 $('opt').addEventListener('change',()=>{applyOption();checkDates();renderRoomPref();quote()});
 $('arr').addEventListener('change',()=>{applyOption();checkDates();renderGuests();renderRoomPref();quote()});
 $('dep').addEventListener('change',()=>{checkDates();renderRoomPref();quote()});
@@ -991,7 +1009,7 @@ $('detail').addEventListener('click',e=>{
   if(e.target.id==='confirmBtn'){
     const r=requests.find(x=>x.ref===selected);
     r.status='confirmed';r.balance='scheduled';r.attempts=0;
-    const dep50=Math.round(r.total*50)/100;
+    const dep50=Math.round(r.total*50)/100+(r.subscription||0);
     renderQueue();renderConfirmed();
     $('register').insertAdjacentHTML('beforebegin',`<div class="flag ok" id="cf"><div><b>${r.ref} confirmed.</b> ${money(dep50)} deposit charged to the card on file. Confirmation and tax invoice emailed to ${r.member}, bed allocation sent to the Lodge Manager, balance of ${money(r.total-dep50)} scheduled for ${fmtDate(addDays(r.arr,-30))}.</div></div>`);
     setTimeout(()=>{const c=$('cf');if(c)c.remove()},9000);
@@ -1020,7 +1038,7 @@ function stepErrors(n){
     /* Unfinancial members are refused rather than dropped to non-member
        rates. This is stricter than the published 2026 terms and needs a
        committee resolution before go-live. */
-    if(lead.rec&&!lead.rec.financial)e.push('Subscription unpaid — '+money(lead.rec.arrears)+' outstanding. Settle it with the Booking Officer and this booking can go ahead.');
+    if(lead.rec&&!lead.rec.financial&&!lead.paySub)e.push('Subscription unpaid — '+money(lead.rec.arrears)+' outstanding. Tick the box to pay it with this booking, or settle it with the Booking Officer first.');
     if(!$('leadName').value.trim())e.push('Enter your name.');
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('email').value.trim()))e.push('Enter a valid email address — this is where your confirmation and receipts go.');
     if($('mobile').value.trim().replace(/\D/g,'').length<8)e.push('Enter a mobile number.');
