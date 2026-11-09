@@ -125,6 +125,18 @@ td.r,th.r{text-align:right}
 hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .stack{display:flex;flex-direction:column;gap:14px}
+/* availability strip */
+.availrow{display:flex;gap:4px;flex-wrap:wrap}
+.availcell{flex:1 1 56px;min-width:0;text-align:center;border:1px solid var(--line);border-radius:var(--r);padding:7px 4px;font-size:11px;color:var(--muted)}
+.availcell b{display:block;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.availcell span{font-size:16px;font-weight:500;color:var(--fg)}
+.availcell.free{border-color:var(--ok);background:var(--ok-soft)}
+.availcell.free span{color:var(--ok)}
+.availcell.tight{border-color:var(--warn);background:var(--warn-soft)}
+.availcell.tight span{color:var(--warn)}
+.availcell.none{border-color:var(--stop);background:var(--stop-soft)}
+.availcell.none span{color:var(--stop)}
+
 /* stepper */
 .prog{display:flex;gap:4px;list-style:none;padding:0;margin:24px 0 0;flex-wrap:wrap}
 .prog li{flex:1 1 90px;min-width:0;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);padding-top:8px;border-top:3px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -212,6 +224,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
       <label class="f">Departure <input id="dep" type="date" value="2027-07-11"></label>
     </div>
     <div id="dateFlag"></div>
+    <div id="availFlag"></div>
     <div class="navrow" data-nav="2"></div>
   </div>
 
@@ -552,9 +565,16 @@ function syncMember(){
      The booking member is ticked automatically — they are guest one, and
      their own status is already established by the number they entered. */
   const eligible=!!(m&&(m.financial||lead.paySub));
-  guests.forEach(g=>{if(!eligible)g.member=false;else if(g.member===undefined)g.member=true});
+  /* Guests follow the booking member's status until someone says otherwise.
+     Defaulting them to non-member instead would make every family booking a
+     nominee booking, pushing it into a later window — and the club allows
+     only one nominee at a time, so that cannot be the intended reading.
+     Untick a guest to mark them a genuine nominee. */
+  guests.forEach(g=>{if(!g.memberSet)g.member=eligible});
   if(eligible&&guests.length)guests[0].member=true;
-  renderGuests();quote();
+  /* The member's class decides which booking window applies, so the dates
+     step has to be re-evaluated whenever the member changes. */
+  renderGuests();checkDates();quote();
 }
 function leadClass(){return(lead.rec&&(lead.rec.financial||lead.paySub))?'member':'nonmember'}
 
@@ -606,6 +626,57 @@ function checkDates(){
       :`<div class="flag stop"><div><b>Not open yet.</b> ${n>=7?'Seven-night':'Short-stay'} requests for ${CLASS_LABEL[cls].toLowerCase()} open <b>9am ${fmtWindow(w)}</b>.${cls==='nominee'?' Your party includes a non-member, which makes this a nominee booking — nominees open a week after members.':cls==='nonmember'?' Members book first.':''} Come back then and your request will be time-stamped in order of receipt.</div></div>`;
   }
   $('dateFlag').innerHTML=h;
+  renderAvail();
+}
+
+function renderAvail(){
+  const av=availability($('arr').value,$('dep').value);
+  if(!av.length){$('availFlag').innerHTML='';return}
+  const low=Math.min(...av.map(x=>x.free));
+  const need=bedsNeeded();
+  const full=av.filter(x=>x.free===0).length;
+  const tight=av.filter(x=>x.free>0&&x.free<need).length;
+  const bar=`<div class="availrow">${av.map(x=>{
+    const cls=x.free===0?'none':x.free<need?'tight':'free';
+    return `<div class="availcell ${cls}"><b>${fmtDate(x.night).replace(/^\w+ /,'')}</b><span class="num">${x.free}</span></div>`;
+  }).join('')}</div>`;
+  let flag='';
+  if(full){
+    flag=`<div class="flag stop"><div><b>The lodge is full on ${full} of these night${av.length===1?'':'s'}.</b> Try different dates, or submit anyway and the Booking Officer will put you on the waitlist in order of receipt.</div></div>`;
+  }else if(need&&low<need){
+    flag=`<div class="flag warn"><div><b>Tight on ${tight} night${tight===1?'':'s'}.</b> Your party needs ${need} bed${need===1?'':'s'} and as few as ${low} are unallocated. The Officer allocates in order of receipt, so this may not hold.</div></div>`;
+  }else{
+    flag=`<div class="flag ok"><div><b>Beds available on every night.</b> ${low} of ${ALL_BEDS} unallocated at the tightest point${need?`, and your party needs ${need}`:''}.</div></div>`;
+  }
+  $('availFlag').innerHTML=`<h3 style="margin:22px 0 8px">Beds unallocated, night by night</h3>
+    <p class="small muted" style="margin-bottom:10px">Counts what no one has been allocated yet. Requests are filled in order of receipt, so this is a guide rather than a reservation.</p>
+    ${bar}${flag}`;
+}
+
+/* ---------------- Availability ----------------
+   Beds are held by confirmed bookings only. A queued request holds nothing,
+   because the Officer allocates in order of receipt — so what the member
+   sees is what is unallocated now, not a reservation. Infants don't take a
+   bed; a single supplement takes the whole room, so two. */
+const ALL_BEDS=ROOMS.reduce((n,r)=>n+r.beds.length,0);
+function bedsTakenOn(night){
+  let n=0;
+  requests.filter(r=>r.status==='confirmed').forEach(r=>{
+    if(night>=r.arr&&night<r.dep)n+=r.beds.length;
+  });
+  return n;
+}
+function availability(arr,dep){
+  if(!arr||!dep||arr>=dep)return[];
+  return nightsList(arr,dep).map(n=>({night:n,taken:bedsTakenOn(n),free:ALL_BEDS-bedsTakenOn(n)}));
+}
+function bedsNeeded(){
+  const ref=$('arr').value||SEASONS[0].s;
+  return guests.reduce((n,g)=>{
+    const b=bandOf(g.dob,ref);
+    if(b==='infant')return n;
+    return n+(g.supp?2:1);
+  },0);
 }
 
 /* Which rooms already have a bed allocated on any night of these dates.
@@ -1008,7 +1079,8 @@ $('guests').addEventListener('input',e=>{
 $('guests').addEventListener('change',e=>{
   const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined)return;
   if(k==='supp'){guests[i].supp=e.target.checked;quote();return}
-  if(k==='member'){guests[i].member=e.target.checked;renderGuests();checkDates();quote();return}
+  if(k==='member'){guests[i].member=e.target.checked;guests[i].memberSet=true;renderGuests();checkDates();quote();return}
+  if(k==='supp'){guests[i].supp=e.target.checked;renderAvail();quote();return}
 });
 $('guests').addEventListener('click',e=>{
   const i=e.target.dataset.rm;if(i===undefined)return;
@@ -1038,7 +1110,7 @@ $('confirmedList').addEventListener('click',e=>{
   if(can){
     const r=requests.find(x=>x.ref===can.dataset.cancel);
     r.balance='cancelled';r.status='cancelled';r.beds=[];
-    renderConfirmed();renderCardView();renderRegister();
+    renderConfirmed();renderCardView();renderRegister();renderAvail();
   }
 });
 
@@ -1084,7 +1156,7 @@ $('detail').addEventListener('click',e=>{
     const r=requests.find(x=>x.ref===selected);
     r.status='confirmed';r.balance='scheduled';r.attempts=0;
     const dep50=Math.round(r.total*50)/100+(r.subscription||0);
-    renderQueue();renderConfirmed();
+    renderQueue();renderConfirmed();renderAvail();
     $('register').insertAdjacentHTML('beforebegin',`<div class="flag ok" id="cf"><div><b>${r.ref} confirmed.</b> ${money(dep50)} deposit charged to the card on file. Confirmation and tax invoice emailed to ${r.member}, bed allocation sent to the Lodge Manager, balance of ${money(r.total-dep50)} scheduled for ${fmtDate(addDays(r.arr,-30))}.</div></div>`);
     setTimeout(()=>{const c=$('cf');if(c)c.remove()},9000);
   }
@@ -1125,6 +1197,8 @@ function stepErrors(n){
     else{
       const n=nightsBetween(a,b),cls=leadClass();
       if(!windowOpen(cls,n))e.push(CLASS_LABEL[cls]+' cannot book '+(n>=7?'seven-night':'short')+' stays until 9am '+fmtWindow(windowFor(cls,n))+'.');
+      const av=availability(a,b),full=av.filter(x=>x.free===0);
+      if(full.length===av.length)e.push('The lodge is fully allocated for every night of these dates. Choose different dates.');
     }
   }
   if(n===3){
@@ -1143,6 +1217,10 @@ function stepErrors(n){
     q.issues.forEach(i=>e.push(i));
     const cls=bookingClass(),nts=nightsBetween($('arr').value,$('dep').value);
     if(!windowOpen(cls,nts))e.push('Your party includes a non-member, so this is a nominee booking. Nominee requests open 9am '+fmtWindow(windowFor(cls,nts))+'.');
+    const av=availability($('arr').value,$('dep').value),need=bedsNeeded();
+    const low=av.length?Math.min(...av.map(x=>x.free)):ALL_BEDS;
+    if(need>ALL_BEDS)e.push('Your party needs '+need+' beds and the lodge has '+ALL_BEDS+'.');
+    else if(low===0)e.push('The lodge is fully allocated on at least one of your nights.');
   }
   if(n===5){
     const un=[...document.querySelectorAll('.reqack')].filter(a=>!a.checked).length;
@@ -1213,5 +1291,5 @@ $('vCard').addEventListener('click',()=>showView('cardview'));
 /* ---------------- Boot ---------------- */
 renderMembers();applyOption();checkDates();renderGuests();quote();pmFields();
 renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();
-renderRoomPref();renderNav();renderProg();goStep(1);
+renderRoomPref();renderAvail();renderNav();renderProg();goStep(1);
 </script>
