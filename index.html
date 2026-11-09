@@ -328,6 +328,15 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
   </div>
 
   <div class="step">
+    <div class="steph"><span class="stepn">Lodge Manager</span><h2>Thursday night email</h2></div>
+    <p class="small muted" style="margin-bottom:14px">Sent automatically to Clarke every Thursday evening: who arrives Friday and who arrives Sunday, with the changeover departures and headcounts. Nobody has to compile it.</p>
+    <label class="f" style="max-width:260px;margin-bottom:14px">Thursday
+      <input type="date" id="packDate">
+    </label>
+    <div id="packOut"></div>
+  </div>
+
+  <div class="step">
     <div class="steph"><span class="stepn">Occupancy</span><h2>People per night</h2></div>
     <p class="small muted" style="margin-bottom:14px">The lodge sleeps <span id="occCap"></span> a night. Any night over that shows red — it should never happen, so treat it as a fault.</p>
     <div id="occFlag"></div>
@@ -1204,6 +1213,64 @@ function balSchedule(r){
 }
 function balanceOf(r){return r.total-Math.round(r.total*50)/100}
 
+/* ---------------- Lodge Manager pack ----------------
+   Oldina's changeovers are Friday and Sunday: weekly stays run Sunday 2pm to
+   Sunday 9:30am, five-day stays Sunday to Friday, two-day stays Friday to
+   Sunday. So the Thursday email covers both changeover days — who leaves on
+   the Friday and Sunday mornings, and who arrives those afternoons. */
+function lastThursdayOnOrBefore(iso0){
+  let c=iso0;
+  while(d(c).getUTCDay()!==4)c=addDays(c,-1);
+  return c;
+}
+function weeklyPack(thu){
+  const fri=addDays(thu,1), sun=addDays(thu,3), nextThu=addDays(thu,7);
+  const live=requests.filter(r=>r.status==='confirmed');
+  const arriving=day=>live.filter(r=>r.arr===day);
+  const leaving=day=>live.filter(r=>r.dep===day);
+  const staying=night=>live.filter(r=>night>=r.arr&&night<r.dep);
+  const nights=nightsList(thu,nextThu).map(n=>({night:n,people:staying(n).reduce((a,r)=>a+(r.pax||0),0)}));
+  return{thu,fri,sun,friIn:arriving(fri),friOut:leaving(fri),sunIn:arriving(sun),sunOut:leaving(sun),nights};
+}
+function packList(rs,what){
+  if(!rs.length)return `<p class="small muted">Nobody ${what}.</p>`;
+  return `<div class="tw"><table>
+    <thead><tr><th>Booking</th><th>Rooms</th><th class="r">Guests</th><th>Until</th><th>Notes</th></tr></thead>
+    <tbody>${rs.map(r=>`<tr>
+      <td>${r.member}<br><span class="xs muted num">${r.ref}</span></td>
+      <td>${(r.rooms||[]).map(id=>(ROOMS.find(x=>x.id===id)||{name:id}).name).join(', ')||'—'}</td>
+      <td class="r num">${r.pax}</td>
+      <td class="num">${fmtDate(r.dep)}</td>
+      <td class="xs muted">${[(r.diets||[]).join('; '),r.notes||''].filter(Boolean).join(' · ')||'—'}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+}
+function renderPack(){
+  if(!$('packDate').value)$('packDate').value=lastThursdayOnOrBefore(SEASONS[0].s>SIM_NOW.slice(0,10)?SEASONS[0].s:'2027-07-08');
+  const thu=$('packDate').value;
+  if(d(thu).getUTCDay()!==4){
+    $('packOut').innerHTML=`<div class="flag warn"><div>Pick a Thursday — the pack goes out on Thursday evenings. ${fmtDate(thu)} is a ${d(thu).toLocaleDateString('en-AU',{weekday:'long',timeZone:'UTC'})}.</div></div>`;
+    return;
+  }
+  const k=weeklyPack(thu);
+  const total=rs=>rs.reduce((a,r)=>a+(r.pax||0),0);
+  $('packOut').innerHTML=`
+    <div class="panel">
+      <div class="tot"><span class="muted">To</span><span>Clarke — Lodge Manager</span></div>
+      <div class="tot"><span class="muted">Sent</span><span class="num">${fmtDate(thu)}, 6pm</span></div>
+      <div class="tot"><span class="muted">Subject</span><span>Oldina changeover — ${fmtDate(k.fri)} and ${fmtDate(k.sun)}</span></div>
+    </div>
+    <h3 style="margin:24px 0 8px">${fmtDate(k.fri)} — ${total(k.friOut)} out by 9:30am, ${total(k.friIn)} in from 2pm</h3>
+    <p class="xs muted" style="margin-bottom:8px">Departing</p>${packList(k.friOut,'leaves on the Friday')}
+    <p class="xs muted" style="margin:12px 0 8px">Arriving</p>${packList(k.friIn,'arrives on the Friday')}
+    <h3 style="margin:24px 0 8px">${fmtDate(k.sun)} — ${total(k.sunOut)} out by 9:30am, ${total(k.sunIn)} in from 2pm</h3>
+    <p class="xs muted" style="margin-bottom:8px">Departing</p>${packList(k.sunOut,'leaves on the Sunday')}
+    <p class="xs muted" style="margin:12px 0 8px">Arriving</p>${packList(k.sunIn,'arrives on the Sunday')}
+    <h3 style="margin:24px 0 8px">Headcount for catering</h3>
+    <div class="availrow">${k.nights.map(n=>`<div class="availcell ${n.people?'free':''}">
+      <b>${fmtDate(n.night).replace(/,.*/,'').slice(0,3)}</b><span class="num">${n.people}</span></div>`).join('')}</div>
+    <p class="xs muted" style="margin-top:10px">Dinner, bed and breakfast. Rooms serviced weekly or on changeover.</p>`;
+}
+
 /* A season-wide check that nothing has slipped past the nightly limit. */
 function overCapacityNights(){
   const out=[];
@@ -1408,6 +1475,8 @@ $('member').addEventListener('click',e=>{
 });
 document.querySelectorAll('.reqack').forEach(a=>a.addEventListener('change',()=>{$('result').innerHTML=''}));
 
+$('packDate').addEventListener('change',renderPack);
+
 $('confirmedList').addEventListener('click',e=>{
   const see=e.target.closest('[data-seecard]');
   if(see){showView('cardview');return}
@@ -1610,7 +1679,7 @@ function showView(v){
   $('cardview').hidden=(v!=='cardview');
   if(v==='cardview')renderCardView();
   if(v==='availview'){renderCalendar($('availCal'));renderAvailTable()}
-  if(v==='officer'){renderQueue();renderConfirmed();renderOccupancy()}
+  if(v==='officer'){renderQueue();renderConfirmed();renderOccupancy();renderPack()}
   window.scrollTo({top:0});
 }
 $('vMember').addEventListener('click',()=>showView('member'));
@@ -1629,6 +1698,6 @@ $('availTable').addEventListener('click',e=>{
 
 /* ---------------- Boot ---------------- */
 renderMembers();applyOption();checkDates();renderGuests();quote();pmFields();
-renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();
+renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();renderOccupancy();renderPack();
 renderRateNote();renderBedPick();renderAvail();renderAvailTable();renderNav();renderProg();goStep(1);
 </script>
