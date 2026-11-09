@@ -154,8 +154,8 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
     <div class="brand">Oldina Perisher</div>
     <div class="views">
       <button id="vMember" aria-pressed="true">Book a stay</button>
+      <button id="vAvail" aria-pressed="false">Availability</button>
       <button id="vOfficer" aria-pressed="false">Booking Officer</button>
-      <button id="vCard" aria-pressed="false">Update card</button>
     </div>
   </div>
 </header>
@@ -165,6 +165,15 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
 <div class="demo">
   <b>Preview build — Phase 1.</b> Nothing here is live. Members, rooms and bookings are invented test data, no payment is processed, and no email is sent. Rates and rules follow the published 2026 booking form.
 </div>
+
+<!-- ============ AVAILABILITY ============ -->
+<section id="availview" hidden>
+  <div class="step">
+    <h1>Availability</h1>
+    <p class="muted" style="margin-top:8px;max-width:62ch">Places left across the <span id="availYear"></span> season, week by week. Counts confirmed bookings only — requests waiting on the Booking Officer hold nothing, so a week showing beds free may still be contested.</p>
+  </div>
+  <div class="step"><div id="availTable"></div></div>
+</section>
 
 <!-- ============ CARD UPDATE (member recovery) ============ -->
 <section id="cardview" hidden>
@@ -235,12 +244,9 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
     <div id="guests"></div>
     <button class="btn sm" id="addGuest" type="button">Add a guest</button>
     <div id="guestFlag"></div>
-    <h3 style="margin:26px 0 8px">Room preference</h3>
-    <p class="small muted" style="margin-bottom:10px">Rooms are twin share, with two king singles and an ensuite. If you have a favourite, say so — the Officer will match it where the allocation allows.</p>
-    <label class="f">Preferred room
-      <select id="roomPref"></select>
-    </label>
-    <div id="roomPrefNote"></div>
+    <h3 style="margin:26px 0 8px">Choose your beds</h3>
+    <p class="small muted" style="margin-bottom:12px">Rooms are twin share — two king singles and an ensuite. Pick the beds you'd like and the Booking Officer will confirm them. Leave it blank and they'll allocate for you.</p>
+    <div id="bedPick"></div>
     <h3 style="margin:26px 0 8px">Anything else the Booking Officer should know</h3>
     <label class="f">
       <textarea id="notes" rows="4" placeholder="e.g. The two boys to share, please — and a lower floor if there's one going, Mum is on a walking stick."></textarea>
@@ -368,10 +374,10 @@ const WINDOWS={
 };
 /* PLACEHOLDER — real room list and bed count to be confirmed by the club */
 const ROOMS=[
-  {id:'R1',name:'Room 1',beds:['1a','1b']},{id:'R2',name:'Room 2',beds:['2a','2b']},
-  {id:'R3',name:'Room 3',beds:['3a','3b']},{id:'R4',name:'Room 4',beds:['4a','4b']},
-  {id:'R5',name:'Room 5',beds:['5a','5b']},{id:'R6',name:'Room 6',beds:['6a','6b']},
-  {id:'R7',name:'Room 7',beds:['7a','7b']},{id:'R8',name:'Room 8',beds:['8a','8b']}
+  {id:'R1',name:'Room 1',cap:2},{id:'R2',name:'Room 2',cap:2},
+  {id:'R3',name:'Room 3',cap:2},{id:'R4',name:'Room 4',cap:2},
+  {id:'R5',name:'Room 5',cap:2},{id:'R6',name:'Room 6',cap:2},
+  {id:'R7',name:'Room 7',cap:3},{id:'R8',name:'Room 8',cap:2}
 ];
 const MAX_SINGLE_SUPP=2;
 /* Invented test members */
@@ -469,9 +475,9 @@ let guests=[
   {first:'Jonah',last:'Vance',dob:'2013-09-02',member:false,supp:false,diet:'No nuts'}
 ];
 let requests=[
-  {ref:'OLD-2027-0041',member:'Priya Nandakumar',financial:true,arrears:0,arr:'2027-07-11',dep:'2027-07-18',pax:4,total:3348,received:'2027-03-06T09:00:14',status:'queued',beds:[],roomPref:'R3',roomPrefName:'Room 3',notes:'The two children in one room and us in the other, ideally next door. Happy with any floor.',diets:['Arun Nandakumar: coeliac']},
-  {ref:'OLD-2027-0042',member:'Douglas Reay',financial:false,arrears:340,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:3910,received:'2027-03-06T09:01:38',status:'queued',beds:[]},
-  {ref:'OLD-2027-0043',member:'Tomas Weir',financial:true,arrears:0,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:1934,received:'2027-03-06T09:02:05',status:'queued',beds:[]}
+  {ref:'OLD-2027-0041',member:'Priya Nandakumar',financial:true,arrears:0,arr:'2027-07-11',dep:'2027-07-18',pax:4,total:3348,received:'2027-03-06T09:00:14',status:'queued',rooms:[],requestedBeds:['R3','R4'],notes:'The two children in one room and us in the other, ideally next door. Happy with any floor.',diets:['Arun Nandakumar: coeliac']},
+  {ref:'OLD-2027-0042',member:'Douglas Reay',financial:false,arrears:340,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:3910,received:'2027-03-06T09:01:38',status:'queued',rooms:[]},
+  {ref:'OLD-2027-0043',member:'Tomas Weir',financial:true,arrears:0,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:1934,received:'2027-03-06T09:02:05',status:'queued',rooms:[]}
 ];
 let selected=null;
 
@@ -500,6 +506,8 @@ function ageOf(dob,ref){if(!dob)return'';return Math.max(0,ageOn(dob,ref))}
    record, which in turn decides the rate each guest pays, which booking
    window applies, and whether the nominee allowance is already used. */
 let lead={isMember:true,rec:null,filledFrom:null,filledGuest:null,paySub:false};
+/* Beds the member has asked for. The Officer confirms or overrides them. */
+let chosenBeds=[];
 /* Subscription owing, only when the member has opted to pay it here */
 function subDue(){return(lead.rec&&!lead.rec.financial&&lead.paySub)?lead.rec.arrears:0}
 
@@ -632,7 +640,7 @@ function renderAvail(){
   const av=availability($('arr').value,$('dep').value);
   if(!av.length){$('availFlag').innerHTML='';return}
   const low=Math.min(...av.map(x=>x.free));
-  const need=bedsNeeded();
+  const need=headcount();
   const full=av.filter(x=>x.free===0).length;
   const tight=av.filter(x=>x.free>0&&x.free<need).length;
   const bar=`<div class="availrow">${av.map(x=>{
@@ -643,12 +651,12 @@ function renderAvail(){
   if(full){
     flag=`<div class="flag stop"><div><b>The lodge is full on ${full} of these night${av.length===1?'':'s'}.</b> Try different dates, or submit anyway and the Booking Officer will put you on the waitlist in order of receipt.</div></div>`;
   }else if(need&&low<need){
-    flag=`<div class="flag warn"><div><b>Tight on ${tight} night${tight===1?'':'s'}.</b> Your party needs ${need} bed${need===1?'':'s'} and as few as ${low} are unallocated. The Officer allocates in order of receipt, so this may not hold.</div></div>`;
+    flag=`<div class="flag warn"><div><b>Tight on ${tight} night${tight===1?'':'s'}.</b> Your party is ${need} and as few as ${low} place${low===1?'':'s'} are left. The Officer allocates in order of receipt, so this may not hold.</div></div>`;
   }else{
-    flag=`<div class="flag ok"><div><b>Beds available on every night.</b> ${low} of ${ALL_BEDS} unallocated at the tightest point${need?`, and your party needs ${need}`:''}.</div></div>`;
+    flag=`<div class="flag ok"><div><b>Room for your party on every night.</b> ${low} of ${LODGE_CAP} places left at the tightest point${need?`, and your party is ${need}`:''}.</div></div>`;
   }
-  $('availFlag').innerHTML=`<h3 style="margin:22px 0 8px">Beds unallocated, night by night</h3>
-    <p class="small muted" style="margin-bottom:10px">Counts what no one has been allocated yet. Requests are filled in order of receipt, so this is a guide rather than a reservation.</p>
+  $('availFlag').innerHTML=`<h3 style="margin:22px 0 8px">Places left, night by night</h3>
+    <p class="small muted" style="margin-bottom:10px">The lodge sleeps ${LODGE_CAP} a night. Counts confirmed bookings only. Requests are filled in order of receipt, so this is a guide rather than a reservation.</p>
     ${bar}${flag}`;
 }
 
@@ -657,25 +665,75 @@ function renderAvail(){
    because the Officer allocates in order of receipt — so what the member
    sees is what is unallocated now, not a reservation. Infants don't take a
    bed; a single supplement takes the whole room, so two. */
-const ALL_BEDS=ROOMS.reduce((n,r)=>n+r.beds.length,0);
-function bedsTakenOn(night){
+/* Rooms are twin share except Room 7, which sleeps three. Capacity lives on
+   each room rather than as a single number, so the club can change it. */
+const ALL_ROOMS=ROOMS.length;
+const ALL_BEDS=ROOMS.reduce((n,r)=>n+r.cap,0);
+/* The lodge sleeps 14 a night. The rooms would hold more, so this cap binds
+   first and is what availability is counted against. At most two single
+   supplements a night across the whole lodge. */
+const LODGE_CAP=14;
+const capOf=ids=>ids.reduce((n,id)=>n+(ROOMS.find(r=>r.id===id)||{cap:0}).cap,0);
+/* Fewest rooms that would sleep this many, largest rooms first */
+function minRoomsFor(pax){
+  const caps=ROOMS.map(r=>r.cap).sort((a,b)=>b-a);
+  let left=pax,n=0;
+  for(const c of caps){if(left<=0)break;left-=c;n++}
+  return left>0?null:n;
+}
+/* A booking takes whole rooms, two to a room. Rooms are never split between
+   two bookings, so availability is counted in rooms, not loose beds. */
+function peopleOn(night){
   let n=0;
   requests.filter(r=>r.status==='confirmed').forEach(r=>{
-    if(night>=r.arr&&night<r.dep)n+=r.beds.length;
+    if(night>=r.arr&&night<r.dep)n+=r.pax||0;
+  });
+  return n;
+}
+function singlesOn(night){
+  let n=0;
+  requests.filter(r=>r.status==='confirmed').forEach(r=>{
+    if(night>=r.arr&&night<r.dep)n+=r.supps||0;
+  });
+  return n;
+}
+function roomsTakenOn(night){
+  let n=0;
+  requests.filter(r=>r.status==='confirmed').forEach(r=>{
+    if(night>=r.arr&&night<r.dep)n+=(r.rooms||[]).length;
   });
   return n;
 }
 function availability(arr,dep){
   if(!arr||!dep||arr>=dep)return[];
-  return nightsList(arr,dep).map(n=>({night:n,taken:bedsTakenOn(n),free:ALL_BEDS-bedsTakenOn(n)}));
+  return nightsList(arr,dep).map(n=>{
+    const rt=roomsTakenOn(n),pp=peopleOn(n),sg=singlesOn(n);
+    return{night:n,taken:rt,roomsFree:ALL_ROOMS-rt,people:pp,free:LODGE_CAP-pp,singlesFree:MAX_SINGLE_SUPP-sg};
+  });
 }
-function bedsNeeded(){
+function roomsTakenMap(arr,dep){
+  const nts=nightsList(arr,dep),out={};
+  requests.filter(r=>r.status==='confirmed').forEach(r=>{
+    if(!nightsList(r.arr,r.dep).some(n=>nts.includes(n)))return;
+    (r.rooms||[]).forEach(id=>out[id]=true);
+  });
+  return out;
+}
+function headcount(){
   const ref=$('arr').value||SEASONS[0].s;
-  return guests.reduce((n,g)=>{
-    const b=bandOf(g.dob,ref);
-    if(b==='infant')return n;
-    return n+(g.supp?2:1);
-  },0);
+  return guests.filter(g=>bandOf(g.dob,ref)!=='infant').length;
+}
+/* Anyone paying the single supplement has a room to themselves; the rest
+   share, filling the larger rooms first. */
+function suppsWanted(){
+  const ref=$('arr').value||SEASONS[0].s;
+  return guests.filter(g=>g.supp&&bandOf(g.dob,ref)==='adult').length;
+}
+function roomsNeeded(){
+  const ref=$('arr').value||SEASONS[0].s;
+  const solo=guests.filter(g=>g.supp&&bandOf(g.dob,ref)==='adult').length;
+  const shared=guests.filter(g=>!g.supp&&bandOf(g.dob,ref)!=='infant').length;
+  return solo+(shared?(minRoomsFor(shared)||Math.ceil(shared/2)):0);
 }
 
 /* Which rooms already have a bed allocated on any night of these dates.
@@ -691,24 +749,80 @@ function roomsTaken(arr,dep){
   });
   return out;
 }
-function renderRoomPref(){
-  const arr=$('arr').value,dep=$('dep').value,taken=roomsTaken(arr,dep);
-  const cur=$('roomPref').value;
-  $('roomPref').innerHTML=`<option value="">No preference — allocate me anything</option>`+
-    ROOMS.map(r=>`<option value="${r.id}"${taken[r.id]?' disabled':''}${cur===r.id?' selected':''}>${r.name}${taken[r.id]?' — already allocated for these dates':''}</option>`).join('');
-  const n=Object.keys(taken).length;
-  $('roomPrefNote').innerHTML=n
-    ?`<p class="xs muted" style="margin-top:8px">${n} of ${ROOMS.length} rooms already allocated for these dates.</p>`
-    :`<p class="xs muted" style="margin-top:8px">All rooms are open for these dates. Rooms are allocated by the Booking Officer in order of receipt, so a preference is a request rather than a reservation.</p>`;
+function renderBedPick(){
+  const arr=$('arr').value,dep=$('dep').value;
+  if(!arr||!dep||arr>=dep){$('bedPick').innerHTML=`<p class="small muted">Choose your dates first and the rooms free for them will appear here.</p>`;return}
+  const taken=roomsTakenMap(arr,dep);
+  const need=roomsNeeded(),pax=headcount();
+  chosenBeds=chosenBeds.filter(id=>!taken[id]);
+  const html=`<div class="beds">${ROOMS.map(room=>{
+    const isTaken=taken[room.id],mine=chosenBeds.includes(room.id);
+    return `<button type="button" class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-pick="${room.id}" ${isTaken?'disabled':''}>
+      <b>${room.name}</b><span class="muted">${isTaken?'Taken':(mine?'Yours':'Sleeps '+room.cap)}</span></button>`;
+  }).join('')}</div>`;
+  const got=capOf(chosenBeds);
+  const ok=chosenBeds.length&&got>=pax;
+  const slack=got-pax;
+  $('bedPick').innerHTML=html+
+    `<div class="flag ${!chosenBeds.length?'warn':got<pax?'stop':slack>=2?'warn':'ok'}">
+      <div>${!chosenBeds.length
+        ? `<b>No rooms chosen.</b> ${pax} guest${pax===1?'':'s'} ${pax===1?'needs':'need'} ${need} room${need===1?'':'s'}. Pick above, or leave it to the Booking Officer.`
+        : got<pax
+        ? `<b>Sleeps ${got}, you have ${pax}.</b> Choose another room — Room 7 sleeps three, the rest sleep two.`
+        : slack>=2
+        ? `<b>${chosenBeds.length} rooms, sleeping ${got}, for ${pax} guest${pax===1?'':'s'}.</b> That leaves ${slack} beds the club can't sell. The Officer may trim this to ${need}.`
+        : `<b>${chosenBeds.length} room${chosenBeds.length===1?'':'s'} chosen, sleeping ${got}, for ${pax} guest${pax===1?'':'s'}.</b> The Booking Officer confirms when they allocate — if someone ahead of you asked for the same room, they may move you.`}</div>
+    </div>`;
+}
+
+/* Season-wide availability, week by week. Weeks run Sunday to Sunday, so the
+   table starts on the first Sunday on or after the season opens; the opening
+   long weekend and the nights before the first Sunday get their own rows. */
+function seasonWeeks(){
+  const start=SEASONS[0].s, end=SEASONS[SEASONS.length-1].e;
+  const rows=[];
+  if(JUNE_LW.s>=start)rows.push({from:JUNE_LW.s,to:JUNE_LW.e,label:'June long weekend'});
+  let c=JUNE_LW.e>=start?JUNE_LW.e:start;
+  let firstSun=c;
+  while(d(firstSun).getUTCDay()!==0)firstSun=addDays(firstSun,1);
+  if(firstSun>c)rows.push({from:c,to:firstSun,label:'Midweek'});
+  c=firstSun;
+  let w=1;
+  while(c<end){
+    const to=addDays(c,7)>end?addDays(end,1):addDays(c,7);
+    rows.push({from:c,to,label:'Week '+w});
+    c=addDays(c,7);w++;
+  }
+  return rows;
+}
+function renderAvailTable(){
+  const y=$('availYear');if(y)y.textContent=SEASON_YEAR;
+  const rows=seasonWeeks().map(r=>{
+    const av=availability(r.from,r.to);
+    const low=av.length?Math.min(...av.map(x=>x.free)):LODGE_CAP;
+    const seasons=[...new Set(nightsList(r.from,r.to).map(seasonOf).filter(Boolean))];
+    const hol=holidaysIn(r.from,r.to);
+    const pct=Math.round((low/LODGE_CAP)*100);
+    const cls=low<=0?'stop':pct<=25?'warn':'ok';
+    const n=nightsBetween(r.from,r.to);
+    return `<tr>
+      <td><b>${r.label}</b><br><span class="xs muted num">${fmtDate(r.from)} to ${fmtDate(r.to)}</span><br><span class="xs muted">${n} night${n===1?'':'s'}</span></td>
+      <td>${seasons.map(x=>SEASON_LABEL[x]).join(', ')||'—'}${hol.length?`<br><span class="xs" style="color:var(--warn)">${hol.map(h=>h.label.replace('NSW ','').replace(' school holidays',' holidays')).join(', ')}</span>`:''}</td>
+      <td class="r"><span class="chip ${cls}">${low<=0?'Full':low+' of '+LODGE_CAP}</span></td>
+      <td class="r">${low>0?`<button class="btn sm" data-book="${r.from}|${r.to}">Book</button>`:''}</td>
+    </tr>`;
+  }).join('');
+  $('availTable').innerHTML=`<div class="tw"><table>
+    <thead><tr><th>When</th><th>Season</th><th class="r">Places left</th><th class="r"></th></tr></thead>
+    <tbody>${rows}</tbody></table></div>
+    <p class="small muted" style="margin-top:12px">Shows the tightest night in each week. The lodge sleeps ${LODGE_CAP} a night across ${ROOMS.length} rooms — ${ROOMS.filter(r=>r.cap===2).length} twin and ${ROOMS.filter(r=>r.cap===3).length} triple — with at most ${MAX_SINGLE_SUPP} single supplements a night.</p>`;
 }
 
 function renderRateNote(){
   const el=$('rateNote');if(!el)return;
   if(!lead.rec||!(lead.rec.financial||lead.paySub)){el.innerHTML='';return}
-  const others=guests.length-1;
   el.innerHTML=`<div class="flag warn"><div><b>Member rates apply to ${lead.rec.name} only.</b> Membership doesn't extend to a spouse, partner or children — everyone else in the party is charged at non-member rates. If another guest is a member in their own right, they should make their own booking under their number.</div></div>`;
 }
-
 function renderGuests(){
   const ref=$('arr').value||'2027-07-04';
   $('guests').innerHTML=guests.map((g,i)=>{
@@ -854,7 +968,7 @@ function submit(){
   const arr2=arr,dep2=dep;
   const now=new Date();
   const ref='OLD-2027-'+String(44+requests.length-3).padStart(4,'0');
-  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:guests.length,total:q.total,received:now.toISOString().slice(0,19),status:'queued',beds:[],subscription:subDue(),roomPref:$('roomPref').value,roomPrefName:($('roomPref').selectedOptions[0]||{}).text||'',notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
+  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:headcount(),supps:suppsWanted(),total:q.total,received:now.toISOString().slice(0,19),status:'queued',rooms:[],subscription:subDue(),requestedBeds:[...chosenBeds],notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
   const dep50=Math.round(q.total*50)/100;
   $('result').innerHTML='';
   STEPS.forEach(s=>{$('ms'+s.n).hidden=true});
@@ -903,7 +1017,8 @@ function renderDetail(){
   const nts=nightsList(r.arr,r.dep);
   const taken={};
   requests.filter(x=>x.status==='confirmed').forEach(x=>{
-    nightsList(x.arr,x.dep).forEach(n=>{if(nts.includes(n))x.beds.forEach(b=>taken[b]=x.member)})
+    if(!nightsList(x.arr,x.dep).some(n=>nts.includes(n)))return;
+    (x.rooms||[]).forEach(id=>taken[id]=x.member);
   });
   const dep50=Math.round(r.total*50)/100;
   $('detail').innerHTML=`
@@ -915,14 +1030,24 @@ function renderDetail(){
     </div>
     ${(!r.financial&&r.subscription)?`<div class="flag ok"><div><b>Subscription paid with this booking.</b> ${money(r.subscription)} is charged in full on confirmation, alongside the deposit. Member rates have been applied. Flag it to the Treasurer so the subscription register is updated.</div></div>`:''}
     ${(!r.financial&&!r.subscription)?`<div class="flag stop"><div><b>Subscription unpaid.</b> This request should not have reached allocation — check before confirming.</div></div>`:''}
-    ${r.roomPref?`<div class="flag warn"><div><b>Room preference:</b> ${(r.roomPrefName||r.roomPref).replace(/&/g,'&amp;').replace(/</g,'&lt;')}${r.beds.length&&!ROOMS.filter(x=>x.id===r.roomPref).some(x=>x.beds.some(b=>r.beds.includes(b)))?' — not currently allocated to this room':''}</div></div>`:''}
+    ${(r.requestedBeds&&r.requestedBeds.length)?(()=>{
+      const names=id=>(ROOMS.find(x=>x.id===id)||{name:id}).name;
+      const clash=r.requestedBeds.filter(id=>taken[id]);
+      const matched=r.requestedBeds.every(id=>(r.rooms||[]).includes(id))&&(r.rooms||[]).length===r.requestedBeds.length;
+      return `<div class="flag ${clash.length?'stop':matched?'ok':'warn'}"><div>
+        <b>Member asked for ${r.requestedBeds.map(names).join(', ')}.</b>
+        ${clash.length?`${clash.map(names).join(', ')} already allocated to someone else — you'll need to move them.`
+          :matched?'Confirmed as requested.'
+          :`<button class="btn sm" data-accept="${r.ref}" style="margin-top:8px">Accept the member's choice</button>`}
+      </div></div>`;})():''}
     ${r.notes?`<div class="flag warn"><div><b>Note from the member</b><br>${r.notes.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`:''}
     ${(r.diets&&r.diets.length)?`<div class="flag warn"><div><b>Dietary requirements</b><br>${r.diets.map(x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>')}</div></div>`:''}
-    <h3 style="margin:18px 0 10px">Allocate beds — ${r.pax} needed, ${nts.length} night${nts.length===1?'':'s'}</h3>
-    ${ROOMS.map(room=>`<div class="room"><div class="roomh">${room.name}</div><div class="beds">${room.beds.map(b=>{
-      const isTaken=taken[b],mine=r.beds.includes(b);
-      return `<button class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-bed="${b}" ${isTaken?'disabled':''}><b>Bed ${b}</b><span class="muted">${isTaken?taken[b]:(mine?'Allocated':'Available')}</span></button>`
-    }).join('')}</div></div>`).join('')}
+    <h3 style="margin:18px 0 10px">Allocate rooms — ${r.pax} guest${r.pax===1?'':'s'}, ${nts.length} night${nts.length===1?'':'s'}</h3>
+    <div class="beds">${ROOMS.map(room=>{
+      const isTaken=taken[room.id],mine=(r.rooms||[]).includes(room.id);
+      return `<button class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-room="${room.id}" ${isTaken?'disabled':''}>
+        <b>${room.name}</b><span class="muted">${isTaken?taken[room.id]:(mine?'Allocated':'Sleeps '+room.cap)}</span></button>`;
+    }).join('')}</div>
     <div class="panel" style="margin-top:18px">
       <div class="tot"><span class="muted">Total</span><span class="num">${money(r.total)}</span></div>
       ${r.subscription?`<div class="tot"><span class="muted">Annual subscription</span><span class="num">${money(r.subscription)}</span></div>`:''}
@@ -930,8 +1055,8 @@ function renderDetail(){
       <div class="tot"><span class="muted">Balance debits</span><span class="num">${fmtDate(addDays(r.arr,-30))}</span></div>
     </div>
     <div class="row" style="margin-top:18px">
-      <button class="btn solid" id="confirmBtn" ${r.beds.length!==r.pax?'disabled':''}>Confirm and charge ${money(dep50+(r.subscription||0))}</button>
-      <span class="small muted">${r.beds.length}/${r.pax} beds allocated${r.beds.length!==r.pax?' — allocate all beds to confirm':''}</span>
+      <button class="btn solid" id="confirmBtn" ${capOf(r.rooms||[])<r.pax?'disabled':''}>Confirm and charge ${money(dep50+(r.subscription||0))}</button>
+      <span class="small muted">${(r.rooms||[]).length} room${(r.rooms||[]).length===1?'':'s'} sleeping ${capOf(r.rooms||[])} for ${r.pax} guest${r.pax===1?'':'s'}${capOf(r.rooms||[])<r.pax?' — not enough yet':''}</span>
     </div>
     <div id="confirmed"></div>`;
 }
@@ -975,7 +1100,8 @@ function renderConfirmed(){
         ${st==='scheduled'?`<button class="btn sm" data-run="${r.ref}" data-ok="1">Run balance debit — succeeds</button>
         <button class="btn sm" data-run="${r.ref}" data-ok="0">Run balance debit — declines</button>`:''}
         ${st==='failed'?`<button class="btn sm" data-run="${r.ref}" data-ok="0">Retry — declines again</button>
-        <button class="btn sm" data-cancel="${r.ref}">Reach ${fmtDate(s.cancel)} unpaid</button>`:''}
+        <button class="btn sm" data-cancel="${r.ref}">Reach ${fmtDate(s.cancel)} unpaid</button>
+        <button class="btn sm" data-seecard="${r.ref}">See the member's card page</button>`:''}
       </div>
       ${st==='scheduled'||st==='failed'?`<p class="xs muted" style="margin-top:8px">Demo controls — in the live system this runs on a schedule, unattended.</p>`:''}
     </div>`;
@@ -1053,26 +1179,26 @@ function renderSeasonCfg(){
 function renderRegister(){
   const rows=[];
   requests.filter(r=>r.status==='confirmed').forEach(r=>{
-    nightsList(r.arr,r.dep).forEach(n=>r.beds.forEach(b=>{
-      const room=ROOMS.find(x=>x.beds.includes(b));
-      rows.push({n,who:r.member,room:room?room.name:'—',bed:b,st:r.financial?'Member':'Non-member'})
-    }))
+    nightsList(r.arr,r.dep).forEach(n=>(r.rooms||[]).forEach(id=>{
+      const room=ROOMS.find(x=>x.id===id);
+      rows.push({n,who:r.member,room:room?room.name:id,cap:room?room.cap:0,st:r.financial?'Member':'Non-member'});
+    }));
   });
   $('register').innerHTML=rows.length?`<div class="tw"><table>
-    <thead><tr><th>Night</th><th>Guest</th><th>Room</th><th>Bed</th><th>Status</th></tr></thead>
-    <tbody>${rows.slice(0,40).map(r=>`<tr><td class="num">${fmtDate(r.n)}</td><td>${r.who}</td><td>${r.room}</td><td class="num">${r.bed}</td><td class="muted">${r.st}</td></tr>`).join('')}</tbody>
+    <thead><tr><th>Night</th><th>Booking</th><th>Room</th><th class="r">Sleeps</th><th>Status</th></tr></thead>
+    <tbody>${rows.slice(0,40).map(r=>`<tr><td class="num">${fmtDate(r.n)}</td><td>${r.who}</td><td>${r.room}</td><td class="r num">${r.cap}</td><td class="muted">${r.st}</td></tr>`).join('')}</tbody>
    </table></div>
-   <p class="small muted" style="margin-top:12px">${rows.length} bed night${rows.length===1?'':'s'} recorded${rows.length>40?' — showing first 40':''}. Cancelled bookings keep their rows, marked cancelled, so the register stays auditable.</p>`
-   :`<p class="muted small">No confirmed bookings yet. Confirm a request to see bed nights appear here.</p>`;
+   <p class="small muted" style="margin-top:12px">${rows.length} room night${rows.length===1?'':'s'} recorded${rows.length>40?' — showing first 40':''}. Cancelled bookings keep their rows, marked cancelled, so the register stays auditable. Named guest rows are generated from the guest list against each room for the NPWS return.</p>`
+   :`<p class="muted small">No confirmed bookings yet. Confirm a request to see room nights appear here.</p>`;
 }
 
 /* ---------------- Events ---------------- */
 document.querySelectorAll('input[name="who"]').forEach(r=>r.addEventListener('change',syncMember));
 $('memberNo').addEventListener('input',syncMember);
 $('memberFlag').addEventListener('change',e=>{if(e.target.id==='paySub'){lead.paySub=e.target.checked;syncMember();const f=$('stepErr');if(f)f.remove()}});
-$('opt').addEventListener('change',()=>{applyOption();checkDates();renderRoomPref();quote()});
-$('arr').addEventListener('change',()=>{applyOption();checkDates();renderGuests();renderRoomPref();quote()});
-$('dep').addEventListener('change',()=>{checkDates();renderRoomPref();quote()});
+$('opt').addEventListener('change',()=>{applyOption();checkDates();renderBedPick();quote()});
+$('arr').addEventListener('change',()=>{applyOption();checkDates();renderGuests();renderBedPick();quote()});
+$('dep').addEventListener('change',()=>{checkDates();renderBedPick();quote()});
 $('addGuest').addEventListener('click',()=>{
   guests.push({first:'',last:'',dob:'',member:false,supp:false,diet:''});
   renderGuests();renderRateNote();checkDates();quote();
@@ -1088,13 +1214,20 @@ $('guests').addEventListener('change',e=>{
   if(k==='supp'){guests[i].supp=e.target.checked;quote();return}
   if(k==='supp'){guests[i].supp=e.target.checked;renderAvail();quote();return}
 });
+$('bedPick').addEventListener('click',e=>{
+  const b=e.target.closest('[data-pick]');if(!b||b.disabled)return;
+  const id=b.dataset.pick,at=chosenBeds.indexOf(id);
+  if(at>=0)chosenBeds.splice(at,1);else chosenBeds.push(id);
+  renderBedPick();const f=$('stepErr');if(f)f.remove();
+});
+
 $('guests').addEventListener('click',e=>{
   const i=e.target.dataset.rm;if(i===undefined)return;
   guests.splice(i,1);renderGuests();renderRateNote();checkDates();quote();
 });
 $('member').addEventListener('input',e=>{
   if(e.target.id==='ccNo')renderCardFlag('cc');
-  if(e.target.id==='notes'||e.target.id==='roomPref'){const f=$('stepErr');if(f)f.remove()}
+  if(e.target.id==='notes'){const f=$('stepErr');if(f)f.remove()}
 });
 $('member').addEventListener('click',e=>{
   const f=e.target.closest('[data-fwd]'),b=e.target.closest('[data-back]'),p=e.target.closest('[data-step]');
@@ -1106,6 +1239,8 @@ $('member').addEventListener('click',e=>{
 document.querySelectorAll('.reqack').forEach(a=>a.addEventListener('change',()=>{$('result').innerHTML=''}));
 
 $('confirmedList').addEventListener('click',e=>{
+  const see=e.target.closest('[data-seecard]');
+  if(see){showView('cardview');return}
   const run=e.target.closest('[data-run]'),can=e.target.closest('[data-cancel]');
   if(run){
     const r=requests.find(x=>x.ref===run.dataset.run);
@@ -1115,7 +1250,7 @@ $('confirmedList').addEventListener('click',e=>{
   }
   if(can){
     const r=requests.find(x=>x.ref===can.dataset.cancel);
-    r.balance='cancelled';r.status='cancelled';r.beds=[];
+    r.balance='cancelled';r.status='cancelled';r.rooms=[];
     renderConfirmed();renderCardView();renderRegister();renderAvail();
   }
 });
@@ -1151,11 +1286,19 @@ $('queue').addEventListener('click',e=>{
   $('detailStep').scrollIntoView({behavior:'smooth',block:'start'});
 });
 $('detail').addEventListener('click',e=>{
-  const bed=e.target.closest('[data-bed]');
-  if(bed&&!bed.disabled){
-    const r=requests.find(x=>x.ref===selected);const b=bed.dataset.bed;
-    const at=r.beds.indexOf(b);
-    if(at>=0)r.beds.splice(at,1);else if(r.beds.length<r.pax)r.beds.push(b);
+  const room=e.target.closest('[data-room]');
+  if(room&&!room.disabled){
+    const r=requests.find(x=>x.ref===selected);const id=room.dataset.room;
+    r.rooms=r.rooms||[];
+    const at=r.rooms.indexOf(id);
+    if(at>=0)r.rooms.splice(at,1);else r.rooms.push(id);
+    renderDetail();return;
+  }
+  const acc=e.target.closest('[data-accept]');
+  if(acc){
+    const r=requests.find(x=>x.ref===acc.dataset.accept);
+    const taken=roomsTakenMap(r.arr,r.dep);
+    r.rooms=r.requestedBeds.filter(id=>!taken[id]);
     renderDetail();return;
   }
   if(e.target.id==='confirmBtn'){
@@ -1203,8 +1346,8 @@ function stepErrors(n){
     else{
       const n=nightsBetween(a,b),cls=leadClass();
       if(!windowOpen(cls,n))e.push(CLASS_LABEL[cls]+' cannot book '+(n>=7?'seven-night':'short')+' stays until 9am '+fmtWindow(windowFor(cls,n))+'.');
-      const av=availability(a,b),full=av.filter(x=>x.free===0);
-      if(full.length===av.length)e.push('The lodge is fully allocated for every night of these dates. Choose different dates.');
+      const av=availability(a,b),full=av.filter(x=>x.free<=0);
+      if(full.length===av.length)e.push('The lodge is full for every night of these dates. Choose different dates.');
     }
   }
   if(n===3){
@@ -1223,10 +1366,13 @@ function stepErrors(n){
     q.issues.forEach(i=>e.push(i));
     const cls=bookingClass(),nts=nightsBetween($('arr').value,$('dep').value);
     if(!windowOpen(cls,nts))e.push('Your party includes a non-member, so this is a nominee booking. Nominee requests open 9am '+fmtWindow(windowFor(cls,nts))+'.');
-    const av=availability($('arr').value,$('dep').value),need=bedsNeeded();
-    const low=av.length?Math.min(...av.map(x=>x.free)):ALL_BEDS;
-    if(need>ALL_BEDS)e.push('Your party needs '+need+' beds and the lodge has '+ALL_BEDS+'.');
-    else if(low===0)e.push('The lodge is fully allocated on at least one of your nights.');
+    const av=availability($('arr').value,$('dep').value);
+    const pax=headcount(),supps=suppsWanted();
+    const lowPeople=av.length?Math.min(...av.map(x=>x.free)):LODGE_CAP;
+    const lowSingles=av.length?Math.min(...av.map(x=>x.singlesFree)):MAX_SINGLE_SUPP;
+    if(pax>LODGE_CAP)e.push('Your party is '+pax+' and the lodge sleeps '+LODGE_CAP+' a night.');
+    else if(pax>lowPeople)e.push('Only '+lowPeople+' place'+(lowPeople===1?'':'s')+' left on at least one of your nights, and your party is '+pax+'.');
+    if(supps>lowSingles)e.push('Only '+lowSingles+' single supplement'+(lowSingles===1?'':'s')+' left on at least one of your nights, and you have asked for '+supps+'. The lodge allows '+MAX_SINGLE_SUPP+' a night in total.');
   }
   if(n===5){
     const un=[...document.querySelectorAll('.reqack')].filter(a=>!a.checked).length;
@@ -1281,21 +1427,33 @@ function goStep(n){
 }
 
 function showView(v){
-  const views={member:'vMember',officer:'vOfficer',cardview:'vCard'};
+  const views={member:'vMember',availview:'vAvail',officer:'vOfficer'};
   Object.entries(views).forEach(([sec,btn])=>{
-    $(sec).hidden=(sec!==v);
     $(btn).setAttribute('aria-pressed',String(sec===v));
   });
+  Object.keys(views).forEach(sec=>{$(sec).hidden=(sec!==v)});
+  $('cardview').hidden=(v!=='cardview');
   if(v==='cardview')renderCardView();
+  if(v==='availview')renderAvailTable();
   if(v==='officer'){renderQueue();renderConfirmed()}
   window.scrollTo({top:0});
 }
 $('vMember').addEventListener('click',()=>showView('member'));
+$('vAvail').addEventListener('click',()=>showView('availview'));
 $('vOfficer').addEventListener('click',()=>showView('officer'));
-$('vCard').addEventListener('click',()=>showView('cardview'));
+
+/* Book straight from an available week */
+$('availTable').addEventListener('click',e=>{
+  const b=e.target.closest('[data-book]');if(!b)return;
+  const [from,to]=b.dataset.book.split('|');
+  $('arr').value=from;$('dep').value=to;
+  $('opt').value=nightsBetween(from,to)===7?'week':'custom';
+  checkDates();renderGuests();renderBedPick();quote();
+  showView('member');goStep(1);
+});
 
 /* ---------------- Boot ---------------- */
 renderMembers();applyOption();checkDates();renderGuests();quote();pmFields();
 renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();
-renderRateNote();renderRoomPref();renderAvail();renderNav();renderProg();goStep(1);
+renderRateNote();renderBedPick();renderAvail();renderAvailTable();renderNav();renderProg();goStep(1);
 </script>
