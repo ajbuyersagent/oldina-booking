@@ -1,0 +1,1106 @@
+<title>Oldina Bookings</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: single column, stepped member form; Officer view is a queue + allocation grid.
+   Palette and type taken from oldinaperisher.com.au — Poppins, white ground, muted purple accent. */
+:root{
+  --bg:#ffffff;
+  --surface:#fbfafc;
+  --line:#e6e3ea;
+  --fg:#111013;
+  --muted:#6b6672;
+  --accent:#896CA3;
+  --accent-soft:#f2eef6;
+  --ok:#2f7d5d;
+  --ok-soft:#eaf5f0;
+  --warn:#9a6b1f;
+  --warn-soft:#fbf3e4;
+  --stop:#a33a3a;
+  --stop-soft:#f9ecec;
+  --font:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --r:10px;
+  /* Single light theme on purpose: the club website is white and airy, and
+     this page sits beside it. No dark variant. */
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-weight:400;line-height:1.55;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+h1,h2,h3{text-wrap:balance;font-weight:500;margin:0}
+h1{font-size:clamp(26px,5vw,40px);letter-spacing:-.01em}
+h2{font-size:clamp(19px,3vw,25px)}
+h3{font-size:15px;font-weight:500}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.xs{font-size:12px}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--bg);border-bottom:1px solid var(--line)}
+.topin{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.views{display:flex;gap:6px}
+.views button{font:inherit;font-size:13px;font-weight:500;padding:7px 14px;border-radius:var(--r);border:1px solid var(--line);background:transparent;color:var(--muted);cursor:pointer}
+.views button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+/* notice banner */
+.demo{background:var(--warn-soft);border:1px solid var(--warn);border-radius:var(--r);padding:12px 14px;margin-block:18px;font-size:13px;color:var(--warn)}
+.demo b{font-weight:600}
+
+/* steps */
+.step{border-top:1px solid var(--line);padding-block:26px}
+.step:first-of-type{border-top:0}
+.steph{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.stepn{font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted);min-width:0}
+input,select,textarea{font:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg);width:100%;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:inherit;font-size:14px;font-weight:500;padding:11px 22px;border-radius:var(--r);border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.btn:hover{background:var(--accent-soft)}
+.btn.solid{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.solid:hover{opacity:.9}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.sm{padding:6px 13px;font-size:13px}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:999px;border:1px solid}
+.chip.ok{color:var(--ok);background:var(--ok-soft);border-color:var(--ok)}
+.chip.warn{color:var(--warn);background:var(--warn-soft);border-color:var(--warn)}
+.chip.stop{color:var(--stop);background:var(--stop-soft);border-color:var(--stop)}
+.chip.neu{color:var(--muted);background:var(--surface);border-color:var(--line)}
+
+/* panels */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.flag{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:var(--r);border:1px solid;font-size:13px;margin-top:12px}
+.flag.ok{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.flag.warn{border-color:var(--warn);background:var(--warn-soft);color:var(--warn)}
+.flag.stop{border-color:var(--stop);background:var(--stop-soft);color:var(--stop)}
+
+/* guest rows */
+.guest{border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:10px;background:var(--bg)}
+.guesth{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.rm{font:inherit;font-size:12px;background:none;border:0;color:var(--muted);cursor:pointer;text-decoration:underline;padding:0}
+.supp{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:10px}
+.supp input{width:auto;margin:0}
+
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r)}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:460px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.03em;text-transform:uppercase;background:var(--surface)}
+tr:last-child td{border-bottom:0}
+td.r,th.r{text-align:right}
+
+/* totals */
+.tot{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+.tot:last-child{border-bottom:0}
+.tot.big{font-size:17px;font-weight:500;padding-top:13px}
+.ack{display:flex;gap:10px;align-items:flex-start;font-size:13px;padding:11px 0;border-bottom:1px solid var(--line)}
+.ack:last-of-type{border-bottom:0}
+.ack input{width:auto;margin:3px 0 0;flex:none}
+
+/* officer */
+.q{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 15px;border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;cursor:pointer;background:var(--bg);text-align:left;font:inherit;width:100%;flex-wrap:wrap}
+.q[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.beds{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+.bed{border:1px solid var(--line);border-radius:var(--r);padding:9px 11px;font-size:12px;background:var(--bg)}
+.bed.taken{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.bed.held{border-color:var(--muted);opacity:.55}
+.bed b{display:block;font-weight:500;font-size:13px;color:var(--fg)}
+.bed.taken b{color:var(--accent)}
+.room{margin-bottom:14px}
+.roomh{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:14px}
+/* stepper */
+.prog{display:flex;gap:4px;list-style:none;padding:0;margin:24px 0 0;flex-wrap:wrap}
+.prog li{flex:1 1 90px;min-width:0;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);padding-top:8px;border-top:3px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog li.on{color:var(--accent);border-top-color:var(--accent);font-weight:500}
+.prog li.done{color:var(--fg);border-top-color:var(--accent)}
+.prog li button{all:unset;cursor:pointer;display:block;width:100%;overflow:hidden;text-overflow:ellipsis}
+.prog li button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.navrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:26px;padding-top:20px;border-top:1px solid var(--line)}
+.navrow .sp{flex:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top">
+  <div class="topin">
+    <div class="brand">Oldina Perisher</div>
+    <div class="views">
+      <button id="vMember" aria-pressed="true">Book a stay</button>
+      <button id="vOfficer" aria-pressed="false">Booking Officer</button>
+      <button id="vCard" aria-pressed="false">Update card</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+<div class="demo">
+  <b>Preview build — Phase 1.</b> Nothing here is live. Members, rooms and bookings are invented test data, no payment is processed, and no email is sent. Rates and rules follow the published 2026 booking form.
+</div>
+
+<!-- ============ CARD UPDATE (member recovery) ============ -->
+<section id="cardview" hidden>
+  <div class="step">
+    <h1>Update your card</h1>
+    <p class="muted" style="margin-top:8px;max-width:62ch">This is the page a member lands on from the "payment unsuccessful" email. The link carries the booking reference, so they never have to find it themselves.</p>
+  </div>
+  <div class="step"><div id="cardPanel"></div></div>
+</section>
+
+<!-- ============ MEMBER ============ -->
+<section id="member">
+
+  <div class="step" style="padding-bottom:10px">
+    <h1>2027 booking request</h1>
+    <p class="muted" style="margin-top:8px;max-width:62ch">Submit your dates and we'll confirm what we can allocate. Bookings are taken in order of receipt. Nothing is charged until the Booking Officer confirms your dates.</p>
+    <div id="windowFlag"></div>
+    <ol class="prog" id="prog"></ol>
+  </div>
+
+  <div class="step scr" id="ms1" style="border-top:0">
+    <div class="steph"><span class="stepn">Step 1 of 6</span><h2>Who's booking</h2></div>
+    <div class="row" style="margin-bottom:16px">
+      <label class="supp" style="margin:0"><input type="radio" name="who" value="member" checked> I'm an Oldina member</label>
+      <label class="supp" style="margin:0"><input type="radio" name="who" value="nonmember"> I'm not a member</label>
+    </div>
+    <div class="grid g2">
+      <label class="f" id="noWrap">Member number
+        <input id="memberNo" inputmode="numeric" placeholder="e.g. 114" autocomplete="off">
+      </label>
+      <label class="f">Name <span id="fromReg" class="xs" style="color:var(--accent)" hidden>from the member register</span>
+        <input id="leadName" autocomplete="name" placeholder="Full name">
+      </label>
+      <label class="f">Email
+        <input id="email" type="email" autocomplete="email">
+      </label>
+      <label class="f">Mobile
+        <input id="mobile" type="tel" autocomplete="tel">
+      </label>
+    </div>
+    <div id="memberFlag"></div>
+    <div class="navrow" data-nav="1"></div>
+  </div>
+
+  <div class="step scr" id="ms2" hidden style="border-top:0">
+    <div class="steph"><span class="stepn">Step 2 of 6</span><h2>Dates</h2></div>
+    <div class="grid g3">
+      <label class="f">Booking option
+        <select id="opt">
+          <option value="week">Weekly — Sun 2pm to Sun 9:30am</option>
+          <option value="five">5 days — Sun 2pm to Fri 9:30am</option>
+          <option value="two">2 days — Fri 2pm to Sun 9:30am</option>
+          <option value="custom">Other dates</option>
+        </select>
+      </label>
+      <label class="f">Arrival <input id="arr" type="date" value="2027-07-04"></label>
+      <label class="f">Departure <input id="dep" type="date" value="2027-07-11"></label>
+    </div>
+    <div id="dateFlag"></div>
+    <div class="navrow" data-nav="2"></div>
+  </div>
+
+  <div class="step scr" id="ms3" hidden style="border-top:0">
+    <div class="steph"><span class="stepn">Step 3 of 6</span><h2>Guests</h2></div>
+    <p class="small muted" style="margin-bottom:14px">A full name is required for every guest — the bed-night register the club files with National Parks is built from them.</p>
+    <div id="guests"></div>
+    <button class="btn sm" id="addGuest" type="button">Add a guest</button>
+    <div id="guestFlag"></div>
+    <h3 style="margin:26px 0 8px">Room preference</h3>
+    <p class="small muted" style="margin-bottom:10px">Rooms are twin share, with two king singles and an ensuite. If you have a favourite, say so — the Officer will match it where the allocation allows.</p>
+    <label class="f">Preferred room
+      <select id="roomPref"></select>
+    </label>
+    <div id="roomPrefNote"></div>
+    <h3 style="margin:26px 0 8px">Anything else the Booking Officer should know</h3>
+    <label class="f">
+      <textarea id="notes" rows="4" placeholder="e.g. The two boys to share, please — and a lower floor if there's one going, Mum is on a walking stick."></textarea>
+    </label>
+    <p class="xs muted" style="margin-top:8px">Who shares with whom, young children, mobility needs, a group who'd like to be near each other. Requests are accommodated where possible but can't be guaranteed.</p>
+    <div class="navrow" data-nav="3"></div>
+  </div>
+
+  <div class="step scr" id="ms4" hidden style="border-top:0">
+    <div class="steph"><span class="stepn">Step 4 of 6</span><h2>What it costs</h2></div>
+    <div id="quote"></div>
+    <div class="navrow" data-nav="4"></div>
+  </div>
+
+  <div class="step scr" id="ms5" hidden style="border-top:0">
+    <div class="steph"><span class="stepn">Step 5 of 6</span><h2>Before you submit</h2></div>
+    <div class="panel">
+      <label class="ack"><input type="checkbox" class="reqack" id="a1"><span>I have read the Booking Information sheet and the Weekly Accommodation Rates.</span></label>
+      <label class="ack"><input type="checkbox" class="reqack" id="a2"><span>I understand Oldina runs a set-up and service kitchen duty roster, and that for one breakfast and one dinner in a 7-day stay I'll set and clear the table and load and empty the dishwasher.</span></label>
+      <label class="ack"><input type="checkbox" class="reqack" id="a3"><span><b>Snow conditions.</b> I understand that snow cover, weather and lift or run closures are outside the club's control, and that poor conditions are not grounds for a refund, credit or transfer.</span></label>
+      <label class="ack"><input type="checkbox" class="reqack" id="a4"><span><b>Payment authority.</b> I authorise Oldina Ski Club to charge the card I provide at the next step for 50% of the total on confirmation of my booking, and for the balance 30 days before my arrival date. I have read the cancellation policy.</span></label>
+    </div>
+    <div class="navrow" data-nav="5"></div>
+  </div>
+
+  <div class="step scr" id="ms6" hidden style="border-top:0">
+    <div class="steph"><span class="stepn">Step 6 of 6</span><h2>Card details</h2></div>
+    <p class="small muted" style="margin-bottom:14px">Stored securely with the payment provider. The club never sees or holds your card number.</p>
+    <div class="panel" id="pmFields"></div>
+    <div class="navrow" data-nav="6"></div>
+    <div id="result"></div>
+  </div>
+
+  <div class="step scr" id="ms7" hidden style="border-top:0">
+    <div id="done"></div>
+  </div>
+</section>
+
+<!-- ============ OFFICER ============ -->
+<section id="officer" hidden>
+  <div class="step">
+    <h1>Booking Officer</h1>
+    <p class="muted" style="margin-top:8px;max-width:62ch">Requests in order of receipt. Allocate rooms and beds, then confirm — the 50% deposit is charged on confirmation and the balance is scheduled for 30 days before arrival.</p>
+  </div>
+
+  <div class="step">
+    <div class="steph"><span class="stepn">Queue</span><h2>Awaiting allocation</h2></div>
+    <div id="queue"></div>
+  </div>
+
+  <div class="step" id="detailStep">
+    <div class="steph"><span class="stepn">Request</span><h2 id="detailName">Select a request</h2></div>
+    <div id="detail"></div>
+  </div>
+
+  <div class="step">
+    <div class="steph"><span class="stepn">Payments</span><h2>Confirmed bookings</h2></div>
+    <p class="small muted" style="margin-bottom:14px">Balance debits run automatically 30 days before arrival. The Officer sees this list only to know where things stand — no chasing is required of them.</p>
+    <div id="confirmedList"></div>
+  </div>
+
+  <div class="step">
+    <div class="steph"><span class="stepn">Config</span><h2>Season dates</h2></div>
+    <p class="small muted" style="margin-bottom:14px">Held on the <b>Seasons</b> tab of the booking spreadsheet, not in the code — the club re-dates a season each year without a developer. Edit a date here and every quote on the member form reprices immediately.</p>
+    <div id="seasonCfg"></div>
+    <div class="flag warn" style="margin-top:16px"><div><b>These are derived dates, not published ones.</b> They follow the 2026 structure — season opens the Friday before the King's Birthday long weekend and closes on the Labour Day long weekend, weeks running Sunday to Sunday. Because both holidays fall differently in 2027, the season is about two weeks shorter. Replace with the club's published 2027 calendar when it is issued.</div></div>
+  </div>
+
+  <div class="step">
+    <div class="steph"><span class="stepn">Register</span><h2>Bed nights</h2></div>
+    <p class="small muted" style="margin-bottom:14px">One row per guest, per bed, per night. This is the basis of the NPWS occupancy return — export format still to be confirmed with the club.</p>
+    <div id="register"></div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* ---------------- Config ----------------
+   TEST CALENDAR — 2027 season, derived from the club's 2026 structure.
+   The club has not published a 2027 rate card. Seasons are anchored the way
+   2026 was: the season opens on the Friday before the King's Birthday long
+   weekend (Mon 14 Jun 2027) and closes on the Labour Day long weekend
+   (Mon 4 Oct 2027), with weeks running Sunday to Sunday. Because those two
+   holidays sit differently in 2027, the season is about two weeks shorter
+   than 2026. Replace all of this with the published 2027 calendar when the
+   club issues it. Rates below are the 2026 published figures, unchanged. */
+const SEASON_YEAR='2027';
+/* These rows mirror the Seasons tab of the booking spreadsheet one for one.
+   In the live build they are read from the sheet at load, never from code,
+   so the club can re-date a season without a developer. */
+let SEASONS=[
+  {s:'2027-06-11',e:'2027-06-26',k:'low',note:'Opening weekend + weeks 1–2'},
+  {s:'2027-06-27',e:'2027-07-03',k:'mid',note:'Week 3'},
+  {s:'2027-07-04',e:'2027-08-21',k:'high',note:'Weeks 4–10'},
+  {s:'2027-08-22',e:'2027-09-11',k:'mid',note:'Weeks 11–13'},
+  {s:'2027-09-12',e:'2027-10-04',k:'low',note:'Weeks 14+ to Labour Day'}
+];
+/* June long weekend: Friday dinner to Monday breakfast, flat rate per person,
+   not a nightly rate. Dates derived from King's Birthday 2027. */
+const JUNE_LW={s:'2027-06-11',e:'2027-06-14'};
+const JUNE_LW_RATE={adult:[315,510],child:[245,360]};
+const RATES={
+  low :{wAdult:[582,1040], wChild:[418,747],  wSingle:[873,1560], nAdult:[97,176], nChild:[70,130], nSingle:[146,264]},
+  mid :{wAdult:[772,1643], wChild:[574,1222], wSingle:[1158,2464],nAdult:[128,275],nChild:[96,202], nSingle:[193,416]},
+  high:{wAdult:[967,1955], wChild:[707,1430], wSingle:[1451,2932],nAdult:[161,321],nChild:[118,234],nSingle:[242,484]}
+};
+/* NSW government school holidays, Eastern Division, 2027.
+   Source: education.nsw.gov.au/schooling/calendars/2027
+   Autumn (12–23 Apr) falls outside the ski season and is omitted. */
+const SCHOOL_HOLIDAYS=[
+  {s:'2027-07-05',e:'2027-07-16',label:'NSW winter school holidays'},
+  {s:'2027-09-27',e:'2027-10-08',label:'NSW spring school holidays'}
+];
+const INFANT_FEE=25;
+/* The club's rule is King's Birthday Monday up to the start of the NSW
+   winter school holidays. In 2027 those begin Mon 5 July, so the window
+   closes Sun 4 July. */
+const INFANT_WINDOW={s:'2027-06-14',e:'2027-07-04'};
+const SEASON_LABEL={low:'Low season',mid:'Mid season',high:'High season'};
+/* Same ordinal weekdays in March as 2026 */
+const WINDOWS={
+  week:  {member:'2027-03-06T09:00',nominee:'2027-03-13T09:00',nonmember:'2027-03-20T09:00'},
+  short: {member:'2027-03-19T09:00',nominee:'2027-03-19T09:00',nonmember:'2027-03-27T09:00'}
+};
+/* PLACEHOLDER — real room list and bed count to be confirmed by the club */
+const ROOMS=[
+  {id:'R1',name:'Room 1',beds:['1a','1b']},{id:'R2',name:'Room 2',beds:['2a','2b']},
+  {id:'R3',name:'Room 3',beds:['3a','3b']},{id:'R4',name:'Room 4',beds:['4a','4b']},
+  {id:'R5',name:'Room 5',beds:['5a','5b']},{id:'R6',name:'Room 6',beds:['6a','6b']},
+  {id:'R7',name:'Room 7',beds:['7a','7b']},{id:'R8',name:'Room 8',beds:['8a','8b']}
+];
+const MAX_SINGLE_SUPP=2;
+/* Invented test members */
+const MEMBERS=[
+  {no:'114',name:'Harriet Vance',   financial:true,  arrears:0,   email:'h.vance@example.com', mobile:'0412 000 111'},
+  {no:'207',name:'Douglas Reay',    financial:false, arrears:340, email:'d.reay@example.com',  mobile:'0412 000 222'},
+  {no:'318',name:'Priya Nandakumar',financial:true,  arrears:0,   email:'p.nanda@example.com', mobile:'0412 000 333'},
+  {no:'442',name:'Tomas Weir',      financial:true,  arrears:0,   email:'t.weir@example.com',  mobile:'0412 000 444'}
+];
+function lookupMember(no){return MEMBERS.find(m=>m.no===String(no||'').trim())||null}
+/* Bookings a member has already made this season, for the nominee rule —
+   a member may sponsor one nominee at a time. */
+const NOMINEES_HELD={'318':1};
+
+/* ---------------- Date helpers ----------------
+   All date maths runs in UTC. Parsing 'YYYY-MM-DD' as local time and then
+   reading it back with toISOString() shifts the day in any timezone ahead of
+   UTC — in Sydney that makes addDays(s,1) return s, and the night loop never
+   terminates. Keep the Z. */
+const d=s=>new Date(s+'T00:00:00Z');
+const iso=x=>x.toISOString().slice(0,10);
+const addDays=(s,n)=>{const x=d(s);x.setUTCDate(x.getUTCDate()+n);return iso(x)};
+const nightsBetween=(a,b)=>Math.round((d(b)-d(a))/86400000);
+const fmtDate=s=>d(s).toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+const money=n=>'$'+n.toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2});
+function seasonOf(day){for(const s of SEASONS){if(day>=s.s&&day<=s.e)return s.k}return null}
+/* School holidays overlapping a stay — demand signal, not a price change */
+function holidaysIn(a,b){return SCHOOL_HOLIDAYS.filter(h=>a<=h.e&&b>h.s)}
+function nightsList(a,b){const out=[];let c=a;while(c<b){out.push(c);c=addDays(c,1)}return out}
+
+/* ---------------- Rate engine ---------------- */
+function priceStay(arr,dep,guests){
+  const nts=nightsList(arr,dep);
+  const n=nts.length;
+  const lines=[];const issues=[];
+  if(n<1){return{lines,total:0,nights:0,issues:['Choose an arrival and departure date.']}}
+  if(n<2){issues.push('Minimum stay is 2 nights. Oldina does not take single-night bookings.')}
+  const outside=nts.filter(x=>!seasonOf(x));
+  if(outside.length){issues.push('Some nights fall outside the '+SEASON_YEAR+' season ('+fmtDate(SEASONS[0].s)+' to '+fmtDate(SEASONS[SEASONS.length-1].e)+').')}
+  const seasons=[...new Set(nts.map(seasonOf).filter(Boolean))];
+  const wholeWeek=(n===7&&seasons.length===1);
+  const idx=g=>g.member?0:1;
+
+  /* June long weekend is a flat per-person rate for Friday dinner to Monday
+     breakfast — not a nightly rate. Applies only to the exact long weekend;
+     a stay that merely overlaps it is priced nightly and flagged. */
+  const isJLW=(arr===JUNE_LW.s&&dep===JUNE_LW.e);
+  const touchesJLW=nts.some(x=>x>=JUNE_LW.s&&x<JUNE_LW.e);
+  if(isJLW){
+    guests.forEach(g=>{
+      if(g.band==='infant'){lines.push({who:g.first+' '+g.last,detail:'Under 3 — flat fee for the stay',amt:INFANT_FEE});return}
+      const amt=JUNE_LW_RATE[g.band==='child'?'child':'adult'][idx(g)];
+      lines.push({who:g.first+' '+g.last,detail:'June long weekend — Fri dinner to Mon breakfast'+(g.member?' (member)':' (non-member)'),amt});
+    });
+    if(guests.filter(g=>g.supp).length)issues.push('Single supplement is not published for the June long weekend — the Booking Officer will confirm a price.');
+    return{lines,total:lines.reduce((a,b)=>a+b.amt,0),nights:n,issues,seasons,wholeWeek:false,jlw:true};
+  }
+  if(touchesJLW)issues.push('These dates overlap the June long weekend, which is charged at a flat rate for Friday dinner to Monday breakfast. The Booking Officer will confirm the price.');
+
+  guests.forEach(g=>{
+    if(g.band==='infant'){
+      const ok=nts.every(x=>x>=INFANT_WINDOW.s&&x<=INFANT_WINDOW.e);
+      if(!ok)issues.push(g.first+' is under 3. Infants are only permitted '+fmtDate(INFANT_WINDOW.s)+' to '+fmtDate(INFANT_WINDOW.e)+'.');
+      lines.push({who:g.first+' '+g.last,detail:'Under 3 — flat fee for the stay',amt:INFANT_FEE});
+      return;
+    }
+    if(wholeWeek){
+      const k=seasons[0],r=RATES[k];
+      const key=g.supp?'wSingle':(g.band==='child'?'wChild':'wAdult');
+      const amt=r[key][idx(g)];
+      const what=g.supp?'Single supplement, 7 nights':(g.band==='child'?'Child 3–17, 7 nights':'Adult, 7 nights');
+      lines.push({who:g.first+' '+g.last,detail:SEASON_LABEL[k]+' — '+what+(g.member?' (member)':' (non-member)'),amt});
+    }else{
+      let amt=0;const per={};
+      nts.forEach(x=>{
+        const k=seasonOf(x);if(!k)return;
+        const r=RATES[k];
+        const key=g.supp?'nSingle':(g.band==='child'?'nChild':'nAdult');
+        const v=r[key][idx(g)];amt+=v;per[k]=(per[k]||0)+1;
+      });
+      const bits=Object.entries(per).map(([k,c])=>c+' night'+(c===1?'':'s')+' '+SEASON_LABEL[k].toLowerCase()).join(', ');
+      const what=g.supp?'single supplement':(g.band==='child'?'child 3–17':'adult');
+      lines.push({who:g.first+' '+g.last,detail:bits+' — '+what+(g.member?' (member)':' (non-member)'),amt});
+    }
+  });
+  const supps=guests.filter(g=>g.supp).length;
+  if(supps>MAX_SINGLE_SUPP)issues.push('Only '+MAX_SINGLE_SUPP+' single-supplement rooms are available per night. You have selected '+supps+'.');
+  const total=lines.reduce((a,b)=>a+b.amt,0);
+  return{lines,total,nights:n,issues,seasons,wholeWeek};
+}
+
+/* ---------------- State ---------------- */
+let guests=[
+  {first:'Harriet',last:'Vance',dob:'1968-04-12',member:true,supp:false,diet:''},
+  {first:'Jonah',last:'Vance',dob:'2013-09-02',member:true,supp:false,diet:'No nuts'}
+];
+let requests=[
+  {ref:'OLD-2027-0041',member:'Priya Nandakumar',financial:true,arrears:0,arr:'2027-07-11',dep:'2027-07-18',pax:4,total:3348,received:'2027-03-06T09:00:14',status:'queued',beds:[],roomPref:'R3',roomPrefName:'Room 3',notes:'The two children in one room and us in the other, ideally next door. Happy with any floor.',diets:['Arun Nandakumar: coeliac']},
+  {ref:'OLD-2027-0042',member:'Douglas Reay',financial:false,arrears:340,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:3910,received:'2027-03-06T09:01:38',status:'queued',beds:[]},
+  {ref:'OLD-2027-0043',member:'Tomas Weir',financial:true,arrears:0,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:1934,received:'2027-03-06T09:02:05',status:'queued',beds:[]}
+];
+let selected=null;
+
+/* ---------------- Member view ---------------- */
+const $=id=>document.getElementById(id);
+
+function bandOf(dob,ref){
+  if(!dob)return 'adult';
+  const a=(d(ref)-d(dob))/(365.25*86400000);
+  if(a<3)return 'infant';if(a<18)return 'child';return 'adult';
+}
+function ageOf(dob,ref){if(!dob)return'';return Math.max(0,Math.floor((d(ref)-d(dob))/(365.25*86400000)))}
+
+/* The member number is what drives the booking: it resolves the member
+   record, which in turn decides the rate each guest pays, which booking
+   window applies, and whether the nominee allowance is already used. */
+let lead={isMember:true,rec:null,filledFrom:null};
+
+function renderMembers(){syncMember()}
+
+function syncMember(){
+  const asMember=document.querySelector('input[name="who"]:checked').value==='member';
+  lead.isMember=asMember;
+  $('noWrap').hidden=!asMember;
+  const no=$('memberNo').value.trim();
+  const m=asMember?lookupMember(no):null;
+  lead.rec=m;
+  let h='';
+
+  if(!asMember){
+    lead.rec=null;
+    h=`<div class="flag warn"><div><b>Non-member rates apply to the whole party.</b> Non-member bookings of 7 nights open 9am ${new Date(WINDOWS.week.nonmember+':00Z').toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'})}. If a member is sponsoring you as their nominee, ask them to book — a nominee must stay at the same time as their member.</div></div>`;
+  }else if(!no){
+    h=`<div class="flag neu" style="border-color:var(--line);background:var(--surface);color:var(--muted)"><div>Enter your member number to confirm your rate. It's on your subscription notice.</div></div>`;
+  }else if(!m){
+    h=`<div class="flag stop"><div><b>Member number ${no} not found.</b> Check the number on your subscription notice, or tick "I'm not a member" to book at non-member rates.</div></div>`;
+  }else if(!m.financial){
+    h=`<div class="flag stop"><div><b>${m.name} — subscription not paid, ${money(m.arrears)} outstanding.</b> Members must be financial before booking, so non-member rates apply to this stay. Settle the subscription separately and this clears straight away. The club does not charge arrears to your booking payment method.</div></div>`;
+  }else{
+    const held=NOMINEES_HELD[m.no]||0;
+    h=`<div class="flag ok"><div><b>${m.name} — financial member.</b> Member rates apply.${held?` You already have ${held} nominee booked this season, so additional non-members in this party pay non-member rates and are not covered by the nominee allowance.`:''}</div></div>`;
+  }
+  /* Fill name, email and mobile from the register whenever the number
+     resolves to a different member than the one we last filled from. Typing
+     a new number replaces the previous member's details rather than leaving
+     them stranded; manual edits survive until the number itself changes. */
+  if(m&&lead.filledFrom!==m.no){
+    $('leadName').value=m.name;$('email').value=m.email;$('mobile').value=m.mobile;
+    lead.filledFrom=m.no;
+  }else if(!m&&lead.filledFrom){
+    $('leadName').value='';$('email').value='';$('mobile').value='';
+    lead.filledFrom=null;
+  }
+  $('fromReg').hidden=!m;
+  $('memberFlag').innerHTML=h;
+
+  /* A guest only gets member rates if the lead is a financial member AND
+     that guest is themselves marked as a member. Nominees are non-members. */
+  const eligible=!!(m&&m.financial);
+  guests.forEach(g=>{if(!eligible)g.member=false;else if(g.member===undefined)g.member=true});
+  renderGuests();quote();
+}
+function leadClass(){return(lead.rec&&lead.rec.financial)?'member':'nonmember'}
+
+function applyOption(){
+  const o=$('opt').value,a=$('arr').value;if(!a||o==='custom')return;
+  if(o==='week')$('dep').value=addDays(a,7);
+  if(o==='five')$('dep').value=addDays(a,5);
+  if(o==='two')$('dep').value=addDays(a,2);
+}
+function checkDates(){
+  const a=$('arr').value,b=$('dep').value;let h='';
+  if(a&&b){
+    const n=nightsBetween(a,b);
+    const o=$('opt').value;
+    const cls=leadClass();
+    const w=(n>=7?WINDOWS.week:WINDOWS.short)[cls];
+    const wd=new Date(w+':00Z');
+    const dow=d(a).getUTCDay();
+    const bits=[];
+    if(n>0)bits.push(`<span class="chip neu">${n} night${n===1?'':'s'}</span>`);
+    const ss=[...new Set(nightsList(a,b).map(seasonOf).filter(Boolean))];
+    ss.forEach(s=>bits.push(`<span class="chip neu">${SEASON_LABEL[s]}</span>`));
+    holidaysIn(a,b).forEach(h=>bits.push(`<span class="chip warn">${h.label}</span>`));
+    if(o==='week'&&dow!==0)bits.push(`<span class="chip warn">Weekly bookings run Sunday to Sunday</span>`);
+    h=`<div class="row" style="margin-top:12px">${bits.join('')}</div>`;
+    h+=`<div class="flag ok"><div><b>Bookings are open.</b> ${n>=7?'Seven-night':'Short-stay'} requests for ${cls==='member'?'members':'non-members'} opened ${wd.toLocaleDateString('en-AU',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'})} at 9am. Your request will be time-stamped on submission and queued in order of receipt.</div></div>`;
+  }
+  $('dateFlag').innerHTML=h;
+}
+
+/* Which rooms already have a bed allocated on any night of these dates.
+   Nothing is allocated until the Officer confirms, so during the booking-open
+   rush this is almost always empty — the dropdown is a preference, not a
+   reservation, and the club's terms are clear that the Officer allocates. */
+function roomsTaken(arr,dep){
+  if(!arr||!dep)return {};
+  const nts=nightsList(arr,dep),out={};
+  requests.filter(r=>r.status==='confirmed').forEach(r=>{
+    if(!nightsList(r.arr,r.dep).some(n=>nts.includes(n)))return;
+    r.beds.forEach(b=>{const room=ROOMS.find(x=>x.beds.includes(b));if(room)out[room.id]=true});
+  });
+  return out;
+}
+function renderRoomPref(){
+  const arr=$('arr').value,dep=$('dep').value,taken=roomsTaken(arr,dep);
+  const cur=$('roomPref').value;
+  $('roomPref').innerHTML=`<option value="">No preference — allocate me anything</option>`+
+    ROOMS.map(r=>`<option value="${r.id}"${taken[r.id]?' disabled':''}${cur===r.id?' selected':''}>${r.name}${taken[r.id]?' — already allocated for these dates':''}</option>`).join('');
+  const n=Object.keys(taken).length;
+  $('roomPrefNote').innerHTML=n
+    ?`<p class="xs muted" style="margin-top:8px">${n} of ${ROOMS.length} rooms already allocated for these dates.</p>`
+    :`<p class="xs muted" style="margin-top:8px">All rooms are open for these dates. Rooms are allocated by the Booking Officer in order of receipt, so a preference is a request rather than a reservation.</p>`;
+}
+
+function renderGuests(){
+  const ref=$('arr').value||'2027-07-04';
+  $('guests').innerHTML=guests.map((g,i)=>{
+    const band=bandOf(g.dob,ref),age=ageOf(g.dob,ref);
+    const chip=band==='infant'?'<span class="chip warn">Under 3 — $25 flat fee</span>':band==='child'?`<span class="chip neu">Child, ${age}</span>`:`<span class="chip neu">Adult</span>`;
+    const rateChip=band==='infant'?'':`<span class="chip ${g.member?'ok':'warn'}">${g.member?'Member rate':'Non-member rate'}</span>`;
+    return `<div class="guest">
+      <div class="guesth"><h3>Guest ${i+1}</h3><div class="row">${chip}${rateChip}${guests.length>1?`<button class="rm" data-rm="${i}" type="button">Remove</button>`:''}</div></div>
+      <div class="grid g2">
+        <label class="f">First name<input data-k="first" data-i="${i}" value="${g.first}"></label>
+        <label class="f">Surname<input data-k="last" data-i="${i}" value="${g.last}"></label>
+        <label class="f">Date of birth<input type="date" data-k="dob" data-i="${i}" value="${g.dob}"></label>
+      </div>
+      <div class="grid" style="margin-top:12px">
+        <label class="f">Allergies or dietary requirements<input data-k="diet" data-i="${i}" value="${g.diet}" placeholder="Leave blank if none"></label>
+      </div>
+      ${band!=='infant'?`<label class="supp"><input type="checkbox" data-k="member" data-i="${i}" ${g.member?'checked':''} ${lead.rec&&lead.rec.financial?'':'disabled'}> This guest is a financial Oldina member${lead.rec&&lead.rec.financial?'':' — unavailable, the booking member is not financial'}</label>`:''}
+      ${band==='adult'?`<label class="supp"><input type="checkbox" data-k="supp" data-i="${i}" ${g.supp?'checked':''}> Single supplement — book a whole room, no sharing</label>`:''}
+    </div>`;
+  }).join('');
+}
+
+function quote(){
+  const arr=$('arr').value,dep=$('dep').value;
+  const ref=arr||'2027-07-04';
+  const gs=guests.map(g=>({...g,band:bandOf(g.dob,ref),supp:g.supp&&bandOf(g.dob,ref)==='adult'}));
+  const q=priceStay(arr,dep,gs);
+  let gf='';
+  const supps=gs.filter(g=>g.supp).length;
+  if(supps)gf+=`<div class="flag ${supps>MAX_SINGLE_SUPP?'stop':'ok'}"><div><b>${supps} of ${MAX_SINGLE_SUPP} single-supplement rooms.</b> ${supps>MAX_SINGLE_SUPP?'More than the lodge can offer on any night.':'Subject to availability on your dates.'}</div></div>`;
+  /* Nominee rule: a member may sponsor one non-member at a time, and that
+     nominee pays non-member rates. */
+  if(lead.rec&&lead.rec.financial){
+    const nonMembers=gs.filter(g=>g.band!=='infant'&&!g.member).length;
+    const held=NOMINEES_HELD[lead.rec.no]||0;
+    if(nonMembers>0){
+      const over=(nonMembers+held)>1;
+      gf+=`<div class="flag ${over?'warn':'ok'}"><div><b>${nonMembers} non-member${nonMembers===1?'':'s'} in the party${held?`, plus ${held} nominee already booked this season`:''}.</b> ${over?'A member may sponsor one nominee at a time. The Booking Officer will confirm whether the others can be accommodated — they pay non-member rates either way.':'Within the one-nominee allowance. Nominees pay non-member rates and must stay at the same time as their member.'}</div></div>`;
+    }
+  }
+  $('guestFlag').innerHTML=gf;
+
+  if(!arr||!dep||q.nights<1){$('quote').innerHTML=`<p class="muted small">Choose your dates and add your guests to see the cost.</p>`;return}
+  const dep50=Math.round(q.total*50)/100;
+  const bal=q.total-dep50;
+  const balDate=addDays(arr,-30);
+  $('quote').innerHTML=`
+   <div class="tw" style="margin-bottom:18px"><table>
+     <thead><tr><th>Guest</th><th>Basis</th><th class="r">Amount</th></tr></thead>
+     <tbody>${q.lines.map(l=>`<tr><td>${l.who}</td><td class="muted">${l.detail}</td><td class="r num">${money(l.amt)}</td></tr>`).join('')}</tbody>
+   </table></div>
+   ${q.issues.map(i=>`<div class="flag stop"><div>${i}</div></div>`).join('')}
+   <div class="panel" style="margin-top:16px">
+     <div class="tot"><span class="muted">Total, GST included</span><span class="num">${money(q.total)}</span></div>
+     <div class="tot"><span class="muted">Deposit, charged when your dates are confirmed</span><span class="num">${money(dep50)}</span></div>
+     <div class="tot"><span class="muted">Balance, debited ${fmtDate(balDate)} — 30 days before arrival</span><span class="num">${money(bal)}</span></div>
+     <div class="tot big"><span>Charged today</span><span class="num">$0.00</span></div>
+   </div>
+   <p class="small muted" style="margin-top:12px">We'll email you seven days before the balance is debited. ${q.wholeWeek?'Priced at the weekly rate.':'Priced at single-night rates — the weekly rate applies to full seven-night stays.'}</p>`;
+}
+
+/* ---------------- Test cards ----------------
+   The payment provider's published test numbers. They are not real cards and
+   cannot move money — they exist so a build like this can be exercised end to
+   end. Replace this block with the live integration before go-live; nothing
+   below should ship to members. */
+const TEST_CARDS={
+  '4242424242424242':{brand:'Visa',          ok:true,  msg:'Approved'},
+  '5555555555554444':{brand:'Mastercard',    ok:true,  msg:'Approved'},
+  '4000000000000002':{brand:'Visa',          ok:false, msg:'Card declined by the issuer'},
+  '4000000000009995':{brand:'Visa',          ok:false, msg:'Insufficient funds'},
+  '4000000000000069':{brand:'Visa',          ok:false, msg:'Card has expired'},
+  '4000000000000127':{brand:'Visa',          ok:false, msg:'Incorrect security code'}
+};
+function checkCard(raw){
+  const n=String(raw||'').replace(/\D/g,'');
+  if(!n)return{state:'empty'};
+  const t=TEST_CARDS[n];
+  if(t)return{state:t.ok?'ok':'declined',...t};
+  return{state:'unknown'};
+}
+function cardPanelHtml(prefix){
+  return `<div class="grid g2">
+       <label class="f">Name on card<input id="${prefix}Name" placeholder="As it appears on the card"></label>
+       <label class="f">Card number<input id="${prefix}No" inputmode="numeric" placeholder="•••• •••• •••• ••••" autocomplete="off"></label>
+       <label class="f">Expiry<input id="${prefix}Exp" placeholder="MM / YY"></label>
+       <label class="f">CVC<input id="${prefix}Cvc" inputmode="numeric" placeholder="•••"></label>
+     </div>
+     <div id="${prefix}Flag"></div>
+     <p class="xs muted" style="margin-top:12px">Mastercard and Visa. Card details go straight to the payment provider — the club stores a reference, never your card number.</p>
+     <details style="margin-top:14px">
+       <summary class="xs" style="cursor:pointer;color:var(--accent)">Test card numbers — preview build only</summary>
+       <div class="tw" style="margin-top:10px"><table>
+         <thead><tr><th>Number</th><th>Result</th></tr></thead>
+         <tbody>${Object.entries(TEST_CARDS).map(([n,t])=>
+           `<tr><td class="num">${n.replace(/(\\d{4})(?=\\d)/g,'$1 ')}</td><td class="${t.ok?'':'muted'}">${t.brand} — ${t.msg}</td></tr>`).join('')}</tbody>
+       </table></div>
+       <p class="xs muted" style="margin-top:8px">Any future expiry and any three-digit CVC. These are the payment provider's published test numbers — they are not real cards and move no money.</p>
+     </details>`;
+}
+function renderCardFlag(prefix){
+  const r=checkCard($(prefix+'No').value);
+  const el=$(prefix+'Flag');
+  if(r.state==='empty'){el.innerHTML='';return}
+  if(r.state==='unknown'){el.innerHTML=`<div class="flag warn" style="margin-top:12px"><div>Not a recognised test number. Use one from the list below.</div></div>`;return}
+  el.innerHTML=r.ok
+    ?`<div class="flag ok" style="margin-top:12px"><div><b>${r.brand} ending ${$(prefix+'No').value.replace(/\D/g,'').slice(-4)}</b> — ${r.msg}.</div></div>`
+    :`<div class="flag stop" style="margin-top:12px"><div><b>${r.brand} ending ${$(prefix+'No').value.replace(/\D/g,'').slice(-4)}</b> — ${r.msg}.</div></div>`;
+}
+/* Card only — the club's published terms accept Mastercard and Visa. */
+function pmFields(){$('pmFields').innerHTML=cardPanelHtml('cc')}
+
+function submit(){
+  const acks=[...document.querySelectorAll('.reqack')];
+  const un=acks.filter(a=>!a.checked).length;
+  const arr=$('arr').value,dep=$('dep').value;
+  const gs=guests.map(g=>({...g,band:bandOf(g.dob,arr||'2027-07-04')}));
+  const q=priceStay(arr,dep,gs);
+  const errs=[];
+  if(un)errs.push(un+' acknowledgement'+(un===1?'':'s')+' still to tick.');
+  const noName=guests.filter(g=>!g.first.trim()||!g.last.trim()).length;
+  if(noName)errs.push(noName+' guest'+(noName===1?'':'s')+' missing a full name.');
+  q.issues.forEach(i=>errs.push(i));
+  if(errs.length){
+    $('result').innerHTML=`<div class="flag stop"><div><b>Not submitted.</b><br>${errs.join('<br>')}</div></div>`;return;
+  }
+  const arr2=arr,dep2=dep;
+  const now=new Date();
+  const ref='OLD-2027-'+String(44+requests.length-3).padStart(4,'0');
+  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:guests.length,total:q.total,received:now.toISOString().slice(0,19),status:'queued',beds:[],roomPref:$('roomPref').value,roomPrefName:($('roomPref').selectedOptions[0]||{}).text||'',notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
+  const dep50=Math.round(q.total*50)/100;
+  $('result').innerHTML='';
+  STEPS.forEach(s=>{$('ms'+s.n).hidden=true});
+  $('ms7').hidden=false;
+  step=STEPS.length+1;renderProg();
+  $('done').innerHTML=`
+    <h1>Request received</h1>
+    <p class="muted" style="margin-top:8px;max-width:62ch">Your reference is <b class="num">${ref}</b>, time-stamped ${now.toLocaleString('en-AU',{day:'numeric',month:'long',year:'numeric',hour:'numeric',minute:'2-digit'})} and queued in order of receipt.</p>
+    <div class="flag ok" style="margin-top:18px"><div><b>Nothing has been charged.</b> Your card is stored with the payment provider. The 50% deposit — ${money(dep50)} — is taken only if the Booking Officer allocates your dates.</div></div>
+    <div class="panel" style="margin-top:16px">
+      <div class="tot"><span class="muted">Stay</span><span class="num">${fmtDate(arr)} → ${fmtDate(dep)}</span></div>
+      <div class="tot"><span class="muted">Guests</span><span class="num">${guests.length}</span></div>
+      <div class="tot"><span class="muted">Total quoted</span><span class="num">${money(q.total)}</span></div>
+      <div class="tot"><span class="muted">Deposit on confirmation</span><span class="num">${money(dep50)}</span></div>
+      <div class="tot"><span class="muted">Balance debits</span><span class="num">${fmtDate(addDays(arr,-30))}</span></div>
+    </div>
+    <h3 style="margin:24px 0 10px">What happens next</h3>
+    <ol class="small muted" style="margin:0;padding-left:20px;line-height:1.9">
+      <li>The Booking Officer works through requests in order of receipt${$('notes').value.trim()?', and will see your room request':''}.</li>
+      <li>If your dates are allocated, the deposit is charged and your confirmation and tax invoice arrive by email.</li>
+      <li>If they can't be, nothing is charged and your card details are discarded.</li>
+      <li>We'll email you seven days before the balance is debited.</li>
+    </ol>
+    <div class="navrow"><button class="btn sm" id="again">Make another booking</button></div>`;
+  renderQueue();renderConfirmed();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------------- Officer view ---------------- */
+function renderQueue(){
+  const qs=requests.filter(r=>r.status==='queued').sort((a,b)=>a.received.localeCompare(b.received));
+  $('queue').innerHTML=qs.length?qs.map(r=>{
+    const t=new Date(r.received.replace(' ','T'));
+    return `<button class="q" data-ref="${r.ref}" aria-pressed="${selected===r.ref}">
+      <span><b>${r.member}</b><br><span class="small muted num">${fmtDate(r.arr)} → ${fmtDate(r.dep)} · ${r.pax} guest${r.pax===1?'':'s'} · ${money(r.total)}</span></span>
+      <span class="row">${r.financial?'':'<span class="chip stop">Subscription unpaid</span>'}<span class="chip neu num">${t.toLocaleString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',second:'2-digit'})}</span></span>
+    </button>`}).join(''):`<p class="muted small">Nothing awaiting allocation.</p>`;
+  if(!qs.find(r=>r.ref===selected))selected=null;
+  renderDetail();renderRegister();
+}
+
+function renderDetail(){
+  if(!selected){$('detailName').textContent='Select a request';$('detail').innerHTML=`<p class="muted small">Choose a request from the queue to allocate rooms.</p>`;return}
+  const r=requests.find(x=>x.ref===selected);
+  $('detailName').textContent=r.member;
+  const nts=nightsList(r.arr,r.dep);
+  const taken={};
+  requests.filter(x=>x.status==='confirmed').forEach(x=>{
+    nightsList(x.arr,x.dep).forEach(n=>{if(nts.includes(n))x.beds.forEach(b=>taken[b]=x.member)})
+  });
+  const dep50=Math.round(r.total*50)/100;
+  $('detail').innerHTML=`
+    <div class="row" style="margin-bottom:16px">
+      <span class="chip neu num">${r.ref}</span>
+      <span class="chip neu num">${fmtDate(r.arr)} → ${fmtDate(r.dep)}</span>
+      <span class="chip neu">${r.pax} guest${r.pax===1?'':'s'}</span>
+      ${r.financial?'<span class="chip ok">Financial</span>':`<span class="chip stop">Arrears ${money(r.arrears)}</span>`}
+    </div>
+    ${r.financial?'':`<div class="flag stop"><div><b>Subscription unpaid.</b> Non-member rates have been applied to this quote. Confirming does not charge the arrears — those are collected separately.</div></div>`}
+    ${r.roomPref?`<div class="flag warn"><div><b>Room preference:</b> ${(r.roomPrefName||r.roomPref).replace(/&/g,'&amp;').replace(/</g,'&lt;')}${r.beds.length&&!ROOMS.filter(x=>x.id===r.roomPref).some(x=>x.beds.some(b=>r.beds.includes(b)))?' — not currently allocated to this room':''}</div></div>`:''}
+    ${r.notes?`<div class="flag warn"><div><b>Note from the member</b><br>${r.notes.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`:''}
+    ${(r.diets&&r.diets.length)?`<div class="flag warn"><div><b>Dietary requirements</b><br>${r.diets.map(x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>')}</div></div>`:''}
+    <h3 style="margin:18px 0 10px">Allocate beds — ${r.pax} needed, ${nts.length} night${nts.length===1?'':'s'}</h3>
+    ${ROOMS.map(room=>`<div class="room"><div class="roomh">${room.name}</div><div class="beds">${room.beds.map(b=>{
+      const isTaken=taken[b],mine=r.beds.includes(b);
+      return `<button class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-bed="${b}" ${isTaken?'disabled':''}><b>Bed ${b}</b><span class="muted">${isTaken?taken[b]:(mine?'Allocated':'Available')}</span></button>`
+    }).join('')}</div></div>`).join('')}
+    <div class="panel" style="margin-top:18px">
+      <div class="tot"><span class="muted">Total</span><span class="num">${money(r.total)}</span></div>
+      <div class="tot"><span class="muted">Charged on confirm</span><span class="num">${money(dep50)}</span></div>
+      <div class="tot"><span class="muted">Balance debits</span><span class="num">${fmtDate(addDays(r.arr,-30))}</span></div>
+    </div>
+    <div class="row" style="margin-top:18px">
+      <button class="btn solid" id="confirmBtn" ${r.beds.length!==r.pax?'disabled':''}>Confirm and charge ${money(dep50)}</button>
+      <span class="small muted">${r.beds.length}/${r.pax} beds allocated${r.beds.length!==r.pax?' — allocate all beds to confirm':''}</span>
+    </div>
+    <div id="confirmed"></div>`;
+}
+
+/* ---------------- Balance debit and card recovery ----------------
+   A booking's balance is debited at arrival −30. If the card declines the
+   system retries at −27 and −24, sends a final notice, and cancels at −21.
+   The member fixes it themselves from the emailed link; the Booking Officer
+   is notified but never has to chase. */
+const RETRY_DAYS=[27,24], CANCEL_DAY=21;
+function balSchedule(r){
+  return{
+    due:addDays(r.arr,-30),
+    notice:addDays(r.arr,-37),
+    retries:RETRY_DAYS.map(d=>addDays(r.arr,-d)),
+    cancel:addDays(r.arr,-CANCEL_DAY)
+  };
+}
+function balanceOf(r){return r.total-Math.round(r.total*50)/100}
+
+function renderConfirmed(){
+  const cs=requests.filter(r=>r.status!=='queued');
+  if(!cs.length){$('confirmedList').innerHTML=`<p class="muted small">No confirmed bookings yet. Confirm a request above and it appears here.</p>`;return}
+  $('confirmedList').innerHTML=cs.map(r=>{
+    const s=balSchedule(r),bal=balanceOf(r);
+    const st=r.balance||'scheduled';
+    const chip=st==='paid'?'<span class="chip ok">Paid in full</span>'
+      :st==='failed'?`<span class="chip stop">Card declined — attempt ${r.attempts||1}</span>`
+      :st==='cancelled'?'<span class="chip stop">Cancelled, bed released</span>'
+      :`<span class="chip neu">Balance scheduled ${fmtDate(s.due)}</span>`;
+    return `<div class="guest">
+      <div class="guesth"><h3>${r.member} <span class="muted xs num">${r.ref}</span></h3><div class="row">${chip}</div></div>
+      <div class="row small muted" style="margin-bottom:10px">
+        <span class="num">${fmtDate(r.arr)} → ${fmtDate(r.dep)}</span>
+        <span class="num">Balance ${money(bal)}</span>
+        <span class="num">Cancels ${fmtDate(s.cancel)}</span>
+      </div>
+      ${st==='failed'?`<div class="flag stop"><div><b>Payment unsuccessful.</b> Member emailed a link to update their card. Automatic retries ${s.retries.map(fmtDate).join(' and ')}. If still unpaid the booking cancels ${fmtDate(s.cancel)} and the bed is released.</div></div>`:''}
+      ${st==='cancelled'?`<div class="flag stop"><div><b>Cancelled automatically.</b> Balance unpaid 21 days before arrival. Bed returned to the pool and the member notified.</div></div>`:''}
+      <div class="row" style="margin-top:10px">
+        ${st==='scheduled'?`<button class="btn sm" data-run="${r.ref}" data-ok="1">Run balance debit — succeeds</button>
+        <button class="btn sm" data-run="${r.ref}" data-ok="0">Run balance debit — declines</button>`:''}
+        ${st==='failed'?`<button class="btn sm" data-run="${r.ref}" data-ok="0">Retry — declines again</button>
+        <button class="btn sm" data-cancel="${r.ref}">Reach ${fmtDate(s.cancel)} unpaid</button>`:''}
+      </div>
+      ${st==='scheduled'||st==='failed'?`<p class="xs muted" style="margin-top:8px">Demo controls — in the live system this runs on a schedule, unattended.</p>`:''}
+    </div>`;
+  }).join('');
+}
+
+function renderCardView(){
+  const r=requests.find(x=>x.balance==='failed');
+  if(!r){
+    $('cardPanel').innerHTML=`<div class="panel"><p class="muted small">No booking currently needs a card update. To see this page as a member would: go to <b>Booking Officer</b>, confirm a request, then run its balance debit and choose <b>declines</b>.</p></div>`;
+    return;
+  }
+  const s=balSchedule(r),bal=balanceOf(r);
+  $('cardPanel').innerHTML=`
+    <div class="flag stop"><div><b>We couldn't process your balance payment.</b> Your card was declined on ${fmtDate(s.due)}. Your booking is still held, but not indefinitely.</div></div>
+    <div class="panel" style="margin-top:16px">
+      <div class="tot"><span class="muted">Booking</span><span class="num">${r.ref}</span></div>
+      <div class="tot"><span class="muted">Stay</span><span class="num">${fmtDate(r.arr)} → ${fmtDate(r.dep)}</span></div>
+      <div class="tot"><span class="muted">Deposit already paid</span><span class="num">${money(r.total-bal)}</span></div>
+      <div class="tot big"><span>Balance owing</span><span class="num">${money(bal)}</span></div>
+    </div>
+    <div class="flag warn" style="margin-top:16px"><div><b>What happens next.</b> We'll try your card again on ${s.retries.map(fmtDate).join(' and ')}. If the balance is still unpaid on <b>${fmtDate(s.cancel)}</b> the booking is cancelled and the bed released. Updating your card below charges the balance straight away and stops the retries.</div></div>
+    <h3 style="margin:22px 0 10px">New card</h3>
+    <div class="panel">${cardPanelHtml('nc')}</div>
+    <div class="row" style="margin-top:18px">
+      <button class="btn solid" data-pay="${r.ref}">Pay ${money(bal)} now</button>
+      <span class="small muted">Charged immediately.</span>
+    </div>
+    <div id="cardResult"></div>
+    <p class="small muted" style="margin-top:20px">Trouble with the card? Email <b>bookings@oldinaperisher.com.au</b> and the Booking Officer can take payment another way before ${fmtDate(s.cancel)}.</p>`;
+}
+
+function renderSeasonCfg(){
+  $('seasonCfg').innerHTML=`<div class="tw"><table>
+    <thead><tr><th>Season</th><th>First night</th><th>Last night</th><th>Covers</th></tr></thead>
+    <tbody>${SEASONS.map((s,i)=>`<tr>
+      <td><select data-si="${i}" data-sk="k">
+        ${['low','mid','high'].map(k=>`<option value="${k}"${s.k===k?' selected':''}>${SEASON_LABEL[k]}</option>`).join('')}
+      </select></td>
+      <td><input type="date" data-si="${i}" data-sk="s" value="${s.s}"></td>
+      <td><input type="date" data-si="${i}" data-sk="e" value="${s.e}"></td>
+      <td class="muted">${s.note||''}</td></tr>`).join('')}
+    </tbody></table></div>
+    <h3 style="margin:22px 0 10px">NSW school holidays</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Break</th><th>First day</th><th>Last day</th><th>Falls in</th></tr></thead>
+      <tbody>${SCHOOL_HOLIDAYS.map(h=>{
+        const ss=[...new Set(nightsList(h.s,addDays(h.e,1)).map(seasonOf).filter(Boolean))];
+        return `<tr><td>${h.label.replace('NSW ','').replace(' school holidays','')}</td>
+          <td class="num">${fmtDate(h.s)}</td><td class="num">${fmtDate(h.e)}</td>
+          <td class="muted">${ss.length?ss.map(s=>SEASON_LABEL[s]).join(', '):'Outside the season'}</td></tr>`}).join('')}
+      </tbody></table></div>
+    <p class="small muted" style="margin-top:10px">Government school dates for the Eastern Division, from <a href="https://education.nsw.gov.au/schooling/calendars/2027" style="color:var(--accent)">NSW Department of Education</a>. They don't change the rate — they drive demand, and the club's infant rule keys off the start of the winter break. The autumn break falls before the season opens.</p>
+    <div class="row" style="margin-top:16px">
+      <span class="chip neu">June long weekend ${fmtDate(JUNE_LW.s)} – ${fmtDate(JUNE_LW.e)}</span>
+      <span class="chip neu">Infants ${fmtDate(INFANT_WINDOW.s)} – ${fmtDate(INFANT_WINDOW.e)}</span>
+      <span class="chip neu">Members book from ${new Date(WINDOWS.week.member+':00Z').toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}</span>
+    </div>
+    <p class="small muted" style="margin-top:12px">The same spreadsheet holds the other tables that change each year — <b>Rates</b>, <b>Booking windows</b>, <b>Rooms and beds</b> and <b>Members</b>. Rates shown in this preview are the published 2026 figures; the club has not yet issued a 2027 card.</p>`;
+}
+
+function renderRegister(){
+  const rows=[];
+  requests.filter(r=>r.status==='confirmed').forEach(r=>{
+    nightsList(r.arr,r.dep).forEach(n=>r.beds.forEach(b=>{
+      const room=ROOMS.find(x=>x.beds.includes(b));
+      rows.push({n,who:r.member,room:room?room.name:'—',bed:b,st:r.financial?'Member':'Non-member'})
+    }))
+  });
+  $('register').innerHTML=rows.length?`<div class="tw"><table>
+    <thead><tr><th>Night</th><th>Guest</th><th>Room</th><th>Bed</th><th>Status</th></tr></thead>
+    <tbody>${rows.slice(0,40).map(r=>`<tr><td class="num">${fmtDate(r.n)}</td><td>${r.who}</td><td>${r.room}</td><td class="num">${r.bed}</td><td class="muted">${r.st}</td></tr>`).join('')}</tbody>
+   </table></div>
+   <p class="small muted" style="margin-top:12px">${rows.length} bed night${rows.length===1?'':'s'} recorded${rows.length>40?' — showing first 40':''}. Cancelled bookings keep their rows, marked cancelled, so the register stays auditable.</p>`
+   :`<p class="muted small">No confirmed bookings yet. Confirm a request to see bed nights appear here.</p>`;
+}
+
+/* ---------------- Events ---------------- */
+document.querySelectorAll('input[name="who"]').forEach(r=>r.addEventListener('change',syncMember));
+$('memberNo').addEventListener('input',syncMember);
+$('opt').addEventListener('change',()=>{applyOption();checkDates();renderRoomPref();quote()});
+$('arr').addEventListener('change',()=>{applyOption();checkDates();renderGuests();renderRoomPref();quote()});
+$('dep').addEventListener('change',()=>{checkDates();renderRoomPref();quote()});
+$('addGuest').addEventListener('click',()=>{
+  guests.push({first:'',last:'',dob:'',member:false,supp:false,diet:''});
+  renderGuests();quote();
+});
+$('guests').addEventListener('input',e=>{
+  const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined)return;
+  guests[i][k]=e.target.type==='checkbox'?e.target.checked:e.target.value;
+  if(k==='dob'||k==='supp')renderGuests();
+  quote();
+});
+$('guests').addEventListener('change',e=>{
+  const i=e.target.dataset.i,k=e.target.dataset.k;if(i===undefined)return;
+  if(k==='supp'){guests[i].supp=e.target.checked;quote();return}
+  if(k==='member'){guests[i].member=e.target.checked;renderGuests();quote();return}
+});
+$('guests').addEventListener('click',e=>{
+  const i=e.target.dataset.rm;if(i===undefined)return;
+  guests.splice(i,1);renderGuests();quote();
+});
+$('member').addEventListener('input',e=>{
+  if(e.target.id==='ccNo')renderCardFlag('cc');
+  if(e.target.id==='notes'||e.target.id==='roomPref'){const f=$('stepErr');if(f)f.remove()}
+});
+$('member').addEventListener('click',e=>{
+  const f=e.target.closest('[data-fwd]'),b=e.target.closest('[data-back]'),p=e.target.closest('[data-step]');
+  if(f){const n=+f.dataset.fwd;n===STEPS.length?submit():goStep(n+1);return}
+  if(b){goStep(+b.dataset.back-1);return}
+  if(p){goStep(+p.dataset.step);return}
+  if(e.target.id==='again'){furthest=1;goStep(1)}
+});
+document.querySelectorAll('.reqack').forEach(a=>a.addEventListener('change',()=>{$('result').innerHTML=''}));
+
+$('confirmedList').addEventListener('click',e=>{
+  const run=e.target.closest('[data-run]'),can=e.target.closest('[data-cancel]');
+  if(run){
+    const r=requests.find(x=>x.ref===run.dataset.run);
+    if(run.dataset.ok==='1'){r.balance='paid';r.attempts=0}
+    else{r.balance='failed';r.attempts=(r.attempts||0)+1}
+    renderConfirmed();renderCardView();return;
+  }
+  if(can){
+    const r=requests.find(x=>x.ref===can.dataset.cancel);
+    r.balance='cancelled';r.status='cancelled';r.beds=[];
+    renderConfirmed();renderCardView();renderRegister();
+  }
+});
+
+$('cardPanel').addEventListener('input',e=>{if(e.target.id==='ncNo')renderCardFlag('nc')});
+$('cardPanel').addEventListener('click',e=>{
+  const b=e.target.closest('[data-pay]');if(!b)return;
+  const r=requests.find(x=>x.ref===b.dataset.pay);
+  const bal=balanceOf(r);
+  const card=checkCard($('ncNo').value);
+  if(card.state!=='ok'){
+    const why=card.state==='empty'?'Enter a card number.':card.state==='unknown'?'That card number is not recognised — use one of the test numbers listed above.':card.msg+'.';
+    $('cardResult').innerHTML=`<div class="flag stop"><div><b>Payment not taken.</b> ${why} Your booking is still held until ${fmtDate(balSchedule(r).cancel)}.</div></div>`;
+    return;
+  }
+  r.balance='paid';r.attempts=0;
+  $('cardResult').innerHTML=`<div class="flag ok"><div><b>Payment received — ${money(bal)}.</b> Your booking ${r.ref} is paid in full and confirmed for ${fmtDate(r.arr)}. A receipt is on its way, your new card is saved for next time, and the scheduled retries have been cancelled.</div></div>`;
+  renderConfirmed();
+});
+
+$('seasonCfg').addEventListener('change',e=>{
+  const i=e.target.dataset.si,k=e.target.dataset.sk;
+  if(i===undefined)return;
+  SEASONS[i][k]=e.target.value;
+  SEASONS.sort((a,b)=>a.s.localeCompare(b.s));
+  renderSeasonCfg();quote();renderQueue();
+});
+
+$('queue').addEventListener('click',e=>{
+  const b=e.target.closest('[data-ref]');if(!b)return;
+  selected=b.dataset.ref;renderQueue();
+  $('detailStep').scrollIntoView({behavior:'smooth',block:'start'});
+});
+$('detail').addEventListener('click',e=>{
+  const bed=e.target.closest('[data-bed]');
+  if(bed&&!bed.disabled){
+    const r=requests.find(x=>x.ref===selected);const b=bed.dataset.bed;
+    const at=r.beds.indexOf(b);
+    if(at>=0)r.beds.splice(at,1);else if(r.beds.length<r.pax)r.beds.push(b);
+    renderDetail();return;
+  }
+  if(e.target.id==='confirmBtn'){
+    const r=requests.find(x=>x.ref===selected);
+    r.status='confirmed';r.balance='scheduled';r.attempts=0;
+    const dep50=Math.round(r.total*50)/100;
+    renderQueue();renderConfirmed();
+    $('register').insertAdjacentHTML('beforebegin',`<div class="flag ok" id="cf"><div><b>${r.ref} confirmed.</b> ${money(dep50)} deposit charged to the card on file. Confirmation and tax invoice emailed to ${r.member}, bed allocation sent to the Lodge Manager, balance of ${money(r.total-dep50)} scheduled for ${fmtDate(addDays(r.arr,-30))}.</div></div>`);
+    setTimeout(()=>{const c=$('cf');if(c)c.remove()},9000);
+  }
+});
+
+/* ---------------- Member stepper ----------------
+   One screen per step. Each step validates before it lets you on, so a
+   member finds out about a problem where it happened rather than at submit. */
+const STEPS=[
+  {n:1,label:"Who's booking",next:'Continue to dates'},
+  {n:2,label:'Dates',next:'Continue to guests'},
+  {n:3,label:'Guests',next:'See the cost'},
+  {n:4,label:'Cost',next:'Continue to confirm'},
+  {n:5,label:'Confirm',next:'Continue to card details'},
+  {n:6,label:'Card',next:'Submit booking request'}
+];
+let step=1,furthest=1;
+
+function stepErrors(n){
+  const e=[];
+  if(n===1){
+    const asMember=document.querySelector('input[name="who"]:checked').value==='member';
+    if(asMember&&!$('memberNo').value.trim())e.push('Enter your member number, or tick "I\'m not a member".');
+    if(asMember&&$('memberNo').value.trim()&&!lead.rec)e.push('That member number isn\'t in the register.');
+    if(!$('leadName').value.trim())e.push('Enter your name.');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('email').value.trim()))e.push('Enter a valid email address — this is where your confirmation and receipts go.');
+    if($('mobile').value.trim().replace(/\D/g,'').length<8)e.push('Enter a mobile number.');
+  }
+  if(n===2){
+    const a=$('arr').value,b=$('dep').value;
+    if(!a||!b)e.push('Choose an arrival and a departure date.');
+    else if(nightsBetween(a,b)<2)e.push('Minimum stay is 2 nights.');
+    else if(nightsList(a,b).some(x=>!seasonOf(x)))e.push('Those dates fall outside the season.');
+  }
+  if(n===3){
+    if(!guests.length)e.push('Add at least one guest.');
+    const noName=guests.filter(g=>!g.first.trim()||!g.last.trim()).length;
+    if(noName)e.push(noName+' guest'+(noName===1?'':'s')+' still need a full name.');
+  }
+  if(n===4){
+    const q=priceStay($('arr').value,$('dep').value,guests.map(g=>({...g,band:bandOf(g.dob,$('arr').value)})));
+    q.issues.forEach(i=>e.push(i));
+  }
+  if(n===5){
+    const un=[...document.querySelectorAll('.reqack')].filter(a=>!a.checked).length;
+    if(un)e.push(un+' acknowledgement'+(un===1?'':'s')+' still to tick.');
+  }
+  if(n===6){
+    const r=checkCard($('ccNo').value);
+    if(r.state==='empty')e.push('Enter a card number.');
+    else if(r.state==='unknown')e.push('That card number is not recognised. In this preview build, use one of the test numbers listed under the card fields.');
+    else if(!r.ok)e.push('Card '+r.msg.toLowerCase()+'. Try a different card.');
+    if(!$('ccName').value.trim())e.push('Enter the name on the card.');
+    if(!/^\s*\d{2}\s*\/?\s*\d{2}\s*$/.test($('ccExp').value))e.push('Enter the expiry as MM / YY.');
+    if($('ccCvc').value.replace(/\D/g,'').length<3)e.push('Enter the three-digit security code.');
+  }
+  return e;
+}
+
+function renderProg(){
+  $('prog').innerHTML=STEPS.map(s=>{
+    const cls=s.n===step?'on':s.n<step?'done':'';
+    const reach=s.n<=furthest;
+    return `<li class="${cls}">${reach?`<button data-step="${s.n}">${s.n}. ${s.label}</button>`:`${s.n}. ${s.label}`}</li>`;
+  }).join('');
+}
+
+function renderNav(){
+  document.querySelectorAll('.navrow').forEach(row=>{
+    const n=+row.dataset.nav,s=STEPS[n-1];
+    row.innerHTML=`${n>1?`<button class="btn sm" data-back="${n}">Back</button>`:''}
+      <span class="sp"></span>
+      <button class="btn solid" data-fwd="${n}">${s.next}</button>`;
+  });
+}
+
+function goStep(n){
+  if(n>step){
+    const errs=stepErrors(step);
+    if(errs.length){
+      $('result').innerHTML='';
+      const host=$('ms'+step).querySelector('.navrow');
+      let f=$('stepErr');if(f)f.remove();
+      host.insertAdjacentHTML('beforebegin',`<div class="flag stop" id="stepErr"><div><b>Before you continue</b><br>${errs.join('<br>')}</div></div>`);
+      return;
+    }
+  }
+  const f=$('stepErr');if(f)f.remove();
+  step=n;furthest=Math.max(furthest,n);
+  STEPS.forEach(s=>{$('ms'+s.n).hidden=(s.n!==n)});
+  $('ms7').hidden=true;
+  renderProg();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function showView(v){
+  const views={member:'vMember',officer:'vOfficer',cardview:'vCard'};
+  Object.entries(views).forEach(([sec,btn])=>{
+    $(sec).hidden=(sec!==v);
+    $(btn).setAttribute('aria-pressed',String(sec===v));
+  });
+  if(v==='cardview')renderCardView();
+  if(v==='officer'){renderQueue();renderConfirmed()}
+  window.scrollTo({top:0});
+}
+$('vMember').addEventListener('click',()=>showView('member'));
+$('vOfficer').addEventListener('click',()=>showView('officer'));
+$('vCard').addEventListener('click',()=>showView('cardview'));
+
+/* ---------------- Boot ---------------- */
+renderMembers();applyOption();checkDates();renderGuests();quote();pmFields();
+renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();
+renderRoomPref();renderNav();renderProg();goStep(1);
+</script>
