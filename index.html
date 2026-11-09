@@ -117,6 +117,22 @@ td.r,th.r{text-align:right}
 .q{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 15px;border:1px solid var(--line);border-radius:var(--r);margin-bottom:8px;cursor:pointer;background:var(--bg);text-align:left;font:inherit;width:100%;flex-wrap:wrap}
 .q[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .beds{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+/* Countdown. Big enough to be the first thing read, and it keeps its width
+   as the digits change so the row doesn't jitter on every tick. */
+.cd{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 0}
+.cdbox{border:1px solid var(--stop);background:var(--stop-soft);border-radius:var(--r);padding:9px 0;text-align:center;min-width:72px;flex:1 1 72px}
+.cdnum{font-size:26px;font-weight:600;line-height:1.1;color:var(--stop);font-variant-numeric:tabular-nums}
+.cdlbl{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--stop);opacity:.8}
+.cd.calm .cdbox{border-color:var(--warn);background:var(--warn-soft)}
+.cd.calm .cdnum,.cd.calm .cdlbl{color:var(--warn)}
+/* The email preview. A plain box that reads as an email, not as part of the
+   page it is describing. */
+.mail{border:1px solid var(--line);border-radius:var(--r);background:var(--bg);overflow:hidden}
+.mailhd{background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px;font-size:12px}
+.mailhd div{display:flex;gap:8px;padding:2px 0}
+.mailhd b{color:var(--muted);font-weight:400;min-width:58px}
+.mailbody{padding:18px 16px;font-size:14px}
+.mailbtn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:12px 24px;border-radius:var(--r);font-weight:500;font-size:14px;margin:4px 0}
 .bed{border:1px solid var(--line);border-radius:var(--r);padding:9px 11px;font-size:12px;background:var(--bg)}
 .bed.taken{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .bed.held{border-color:var(--muted);opacity:.55}
@@ -208,7 +224,15 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
     <h1>Update your card</h1>
     <p class="muted" style="margin-top:8px;max-width:62ch">This is the page a member lands on from the "payment unsuccessful" email. The link carries the booking reference, so they never have to find it themselves.</p>
   </div>
-  <div class="step"><div id="cardPanel"></div></div>
+  <div class="step">
+    <div class="steph"><span class="stepn">1 — the email</span><h2>What the member is sent</h2></div>
+    <p class="small muted" style="margin-bottom:14px">Sent the moment the card is declined, then again at each retry. It states the deadline, counts the days left, and carries one button.</p>
+    <div id="declineEmail"></div>
+  </div>
+  <div class="step">
+    <div class="steph"><span class="stepn">2 — the page</span><h2>Where the button lands</h2></div>
+    <div id="cardPanel"></div>
+  </div>
 </section>
 
 <!-- ============ MEMBER ============ -->
@@ -1269,6 +1293,56 @@ function balSchedule(r){
 }
 function balanceOf(r){return r.total-Math.round(r.total*50)/100}
 
+/* ---------------- Countdown ----------------
+   Cancellation runs with the morning jobs on the cancel day, so that 9am is
+   the deadline, not midnight. The preview's clock is the simulated date
+   advancing in real time, so the timer actually ticks while you watch it. */
+const CANCEL_HOUR='09:00';
+const BOOT_MS=Date.now();
+const simNowMs=()=>new Date(SIM_NOW+':00Z').getTime()+(Date.now()-BOOT_MS);
+const deadlineMs=r=>new Date(balSchedule(r).cancel+'T'+CANCEL_HOUR+':00Z').getTime();
+function countdownParts(ms){
+  if(ms<=0)return null;
+  const t=Math.floor(ms/1000);
+  return{d:Math.floor(t/86400),h:Math.floor(t%86400/3600),m:Math.floor(t%3600/60),s:t%60};
+}
+/* Under two days it stops being a date on a page and starts being urgent. */
+const URGENT_DAYS=2;
+/* Always round DOWN. Telling someone they have 2 days when 25 hours remain
+   buys the club nothing and costs the member a booking. */
+function timeLeftPhrase(r){
+  const ms=deadlineMs(r)-simNowMs();
+  if(ms<=0)return 'today';
+  const h=Math.floor(ms/3600000);
+  if(h<1)return 'less than an hour';
+  if(h<24)return h+' hour'+(h===1?'':'s');
+  const dd=Math.floor(h/24);
+  return dd+' day'+(dd===1?'':'s');
+}
+function countdownHtml(r){
+  const c=countdownParts(deadlineMs(r)-simNowMs());
+  if(!c)return `<div class="flag stop" style="margin-top:14px"><div><b>This booking has passed its cancellation date.</b></div></div>`;
+  const calm=c.d>=URGENT_DAYS?' calm':'';
+  const cell=(v,l,id)=>`<div class="cdbox"><div class="cdnum" id="${id}">${String(v).padStart(2,'0')}</div><div class="cdlbl">${l}</div></div>`;
+  return `<div class="cd${calm}" id="cdRow">
+    ${cell(c.d,'Days','cdD')}${cell(c.h,'Hours','cdH')}${cell(c.m,'Minutes','cdM')}${cell(c.s,'Seconds','cdS')}
+  </div>`;
+}
+/* Tick only the digits. Re-rendering the panel would wipe whatever the
+   member has typed into the card fields. */
+let cdTimer=null;
+function startCountdown(r){
+  if(cdTimer)clearInterval(cdTimer);
+  cdTimer=setInterval(()=>{
+    const row=$('cdRow');if(!row){clearInterval(cdTimer);cdTimer=null;return}
+    const c=countdownParts(deadlineMs(r)-simNowMs());
+    if(!c){renderCardView();return}
+    const put=(id,v)=>{const e=$(id);if(e)e.textContent=String(v).padStart(2,'0')};
+    put('cdD',c.d);put('cdH',c.h);put('cdM',c.m);put('cdS',c.s);
+    row.classList.toggle('calm',c.d>=URGENT_DAYS);
+  },1000);
+}
+
 /* ---------------- Lodge Manager pack ----------------
    Oldina's changeovers are Friday and Sunday: weekly stays run Sunday 2pm to
    Sunday 9:30am, five-day stays Sunday to Friday, two-day stays Friday to
@@ -1367,7 +1441,7 @@ function renderConfirmed(){
         <button class="btn sm" data-run="${r.ref}" data-ok="0">Run balance debit — declines</button>`:''}
         ${st==='failed'?`<button class="btn sm" data-run="${r.ref}" data-ok="0">Retry — declines again</button>
         <button class="btn sm" data-cancel="${r.ref}">Reach ${fmtDate(s.cancel)} unpaid</button>
-        <button class="btn sm" data-seecard="${r.ref}">See the member's card page</button>`:''}
+        <button class="btn sm" data-seecard="${r.ref}">See the warning email and card page</button>`:''}
       </div>
       ${st==='scheduled'||st==='failed'?`<p class="xs muted" style="margin-top:8px">Demo controls — in the live system this runs on a schedule, unattended.</p>`:''}
     </div>`;
@@ -1375,21 +1449,74 @@ function renderConfirmed(){
 }
 
 function renderCardView(){
+  if(cdTimer){clearInterval(cdTimer);cdTimer=null}
   const r=requests.find(x=>x.balance==='failed');
   if(!r){
-    $('cardPanel').innerHTML=`<div class="panel"><p class="muted small">No booking currently needs a card update. To see this page as a member would: go to <b>Booking Officer</b>, confirm a request, then run its balance debit and choose <b>declines</b>.</p></div>`;
+    const hint=`<div class="panel"><p class="muted small">No booking currently needs a card update. To see this as a member would: go to <b>Booking Officer</b>, confirm a request, then run its balance debit and choose <b>declines</b>.</p></div>`;
+    $('declineEmail').innerHTML=hint;$('cardPanel').innerHTML='';
     return;
   }
-  const s=balSchedule(r),bal=balanceOf(r);
+  const s2=balSchedule(r),bal=balanceOf(r);
+  const left=timeLeftPhrase(r);
+  const attempt=r.attempts||1;
+  const nextRetry=s2.retries.map(x=>x).find(x=>x>SIM_NOW.slice(0,10));
+
+  /* ---- the email ----
+     No live timer in here. Outlook strips scripts and freezes animated GIFs,
+     and the club is a Microsoft shop, so a ticking clock would simply be
+     broken for most members. The days are counted at send time and the
+     deadline is stated as a date; the live timer is on the landing page. */
+  $('declineEmail').innerHTML=`
+  <div class="mail">
+    <div class="mailhd">
+      <div><b>To</b><span>${r.member} &lt;member@example.com&gt;</span></div>
+      <div><b>From</b><span>Oldina Ski Club &lt;bookings@oldinaperisher.com.au&gt;</span></div>
+      <div><b>Subject</b><span><b>Action needed: your Oldina booking ${r.ref} will be cancelled in ${left}</b></span></div>
+    </div>
+    <div class="mailbody">
+      <p style="margin:0 0 14px">Hello ${(r.member||'').split(' ')[0]||'there'},</p>
+      <p style="margin:0 0 14px">We tried to take the balance of your booking on <b>${fmtDate(s2.due)}</b> and the card was declined${attempt>1?` — this was attempt ${attempt}`:''}. Your beds are still held, but not indefinitely.</p>
+
+      <div class="flag stop" style="margin:0 0 16px"><div style="width:100%">
+        <b>Your booking will be cancelled on ${fmtDate(s2.cancel)}.</b>
+        <div style="font-size:30px;font-weight:600;line-height:1.1;margin:10px 0 2px">${left} left</div>
+        <div class="xs" style="opacity:.85">Counted when this email was sent. The page below shows the time remaining to the minute.</div>
+      </div></div>
+
+      <div class="panel" style="margin-bottom:16px">
+        <div class="tot"><span class="muted">Booking</span><span class="num">${r.ref}</span></div>
+        <div class="tot"><span class="muted">Stay</span><span class="num">${fmtDate(r.arr)} → ${fmtDate(r.dep)}</span></div>
+        <div class="tot"><span class="muted">Deposit already paid</span><span class="num">${money(r.total-bal)}</span></div>
+        <div class="tot big"><span>Balance owing</span><span class="num">${money(bal)}</span></div>
+      </div>
+
+      <p style="margin:0 0 6px"><b>Update your card and this is settled in a minute.</b></p>
+      <p style="margin:0 0 14px" class="small muted">The link opens your booking directly — you don't need a password or your reference.</p>
+      <a class="mailbtn" href="#" data-gocard="1">Update my card and pay ${money(bal)}</a>
+
+      <p class="small muted" style="margin:18px 0 0">${nextRetry
+        ? `If you do nothing, we'll try the same card again on <b>${fmtDate(nextRetry)}</b>.`
+        : `We've made all the automatic attempts we can.`}
+        If the balance is unpaid on <b>${fmtDate(s2.cancel)}</b> the booking is cancelled and the beds are released to other members. Cancellation at this point forfeits the deposit under the booking terms.</p>
+      <p class="small muted" style="margin:14px 0 0">Can't make the card work? Reply to this email and the Booking Officer will take payment another way before ${fmtDate(s2.cancel)}.</p>
+    </div>
+  </div>`;
+
+  /* ---- the page the button lands on ---- */
   $('cardPanel').innerHTML=`
-    <div class="flag stop"><div><b>We couldn't process your balance payment.</b> Your card was declined on ${fmtDate(s.due)}. Your booking is still held, but not indefinitely.</div></div>
+    <div class="flag stop"><div><b>We couldn't process your balance payment.</b> Your card was declined on ${fmtDate(s2.due)}. Your beds are still held, but not indefinitely.</div></div>
     <div class="panel" style="margin-top:16px">
       <div class="tot"><span class="muted">Booking</span><span class="num">${r.ref}</span></div>
       <div class="tot"><span class="muted">Stay</span><span class="num">${fmtDate(r.arr)} → ${fmtDate(r.dep)}</span></div>
       <div class="tot"><span class="muted">Deposit already paid</span><span class="num">${money(r.total-bal)}</span></div>
       <div class="tot big"><span>Balance owing</span><span class="num">${money(bal)}</span></div>
     </div>
-    <div class="flag warn" style="margin-top:16px"><div><b>What happens next.</b> We'll try your card again on ${s.retries.map(fmtDate).join(' and ')}. If the balance is still unpaid on <b>${fmtDate(s.cancel)}</b> the booking is cancelled and the bed released. Updating your card below charges the balance straight away and stops the retries.</div></div>
+    <h3 style="margin:22px 0 2px">Time left before this booking is cancelled</h3>
+    <p class="xs muted" style="margin:0">Cancelled at 9am on ${fmtDate(s2.cancel)}, when the beds are released.</p>
+    ${countdownHtml(r)}
+    <div class="flag warn" style="margin-top:16px"><div>${nextRetry
+      ? `<b>We'll try your card again on ${fmtDate(nextRetry)}.</b> `
+      : `<b>No automatic attempts remain.</b> `}Updating your card below charges the balance straight away and stops the retries.</div></div>
     <h3 style="margin:22px 0 10px">New card</h3>
     <div class="panel">${cardPanelHtml('nc')}</div>
     <div class="row" style="margin-top:18px">
@@ -1397,7 +1524,8 @@ function renderCardView(){
       <span class="small muted">Charged immediately.</span>
     </div>
     <div id="cardResult"></div>
-    <p class="small muted" style="margin-top:20px">Trouble with the card? Email <b>bookings@oldinaperisher.com.au</b> and the Booking Officer can take payment another way before ${fmtDate(s.cancel)}.</p>`;
+    <p class="small muted" style="margin-top:20px">Trouble with the card? Email <b>bookings@oldinaperisher.com.au</b> and the Booking Officer can take payment another way before ${fmtDate(s2.cancel)}.</p>`;
+  startCountdown(r);
 }
 
 function renderSeasonCfg(){
@@ -1543,6 +1671,14 @@ function renderDocs(){
 document.querySelectorAll('.reqack').forEach(a=>a.addEventListener('change',()=>{$('result').innerHTML=''}));
 
 $('packDate').addEventListener('change',renderPack);
+
+/* The email's button is the member's only route in; in the preview it drops
+   them at the form the real link would open. */
+$('declineEmail').addEventListener('click',e=>{
+  const b=e.target.closest('[data-gocard]');if(!b)return;
+  e.preventDefault();
+  $('cardPanel').scrollIntoView({behavior:'smooth',block:'start'});
+});
 
 $('confirmedList').addEventListener('click',e=>{
   const see=e.target.closest('[data-seecard]');
