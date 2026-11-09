@@ -491,7 +491,7 @@ function syncMember(){
   }else if(!m){
     h=`<div class="flag stop"><div><b>Member number ${no} not found.</b> Check the number on your subscription notice, or tick "I'm not a member" to book at non-member rates.</div></div>`;
   }else if(!m.financial){
-    h=`<div class="flag stop"><div><b>${m.name} — subscription not paid, ${money(m.arrears)} outstanding.</b> Members must be financial before booking, so non-member rates apply to this stay. Settle the subscription separately and this clears straight away. The club does not charge arrears to your booking payment method.</div></div>`;
+    h=`<div class="flag stop"><div><b>${m.name} — we can't take this booking yet.</b> Your annual subscription is unpaid, with ${money(m.arrears)} outstanding, and members must be financial before booking.<br><br>Settle your subscription and this clears immediately — email <b>bookings@oldinaperisher.com.au</b>. Your subscription is never charged to the card you give here; the two are kept separate.</div></div>`;
   }else{
     const held=NOMINEES_HELD[m.no]||0;
     h=`<div class="flag ok"><div><b>${m.name} — financial member.</b> Member rates apply.${held?` You already have ${held} nominee booked this season, so additional non-members in this party pay non-member rates and are not covered by the nominee allowance.`:''}</div></div>`;
@@ -511,9 +511,12 @@ function syncMember(){
   $('memberFlag').innerHTML=h;
 
   /* A guest only gets member rates if the lead is a financial member AND
-     that guest is themselves marked as a member. Nominees are non-members. */
+     that guest is themselves marked as a member. Nominees are non-members.
+     The booking member is ticked automatically — they are guest one, and
+     their own status is already established by the number they entered. */
   const eligible=!!(m&&m.financial);
   guests.forEach(g=>{if(!eligible)g.member=false;else if(g.member===undefined)g.member=true});
+  if(eligible&&guests.length)guests[0].member=true;
   renderGuests();quote();
 }
 function leadClass(){return(lead.rec&&lead.rec.financial)?'member':'nonmember'}
@@ -1014,6 +1017,10 @@ function stepErrors(n){
     const asMember=document.querySelector('input[name="who"]:checked').value==='member';
     if(asMember&&!$('memberNo').value.trim())e.push('Enter your member number, or tick "I\'m not a member".');
     if(asMember&&$('memberNo').value.trim()&&!lead.rec)e.push('That member number isn\'t in the register.');
+    /* Unfinancial members are refused rather than dropped to non-member
+       rates. This is stricter than the published 2026 terms and needs a
+       committee resolution before go-live. */
+    if(lead.rec&&!lead.rec.financial)e.push('Subscription unpaid — '+money(lead.rec.arrears)+' outstanding. Settle it with the Booking Officer and this booking can go ahead.');
     if(!$('leadName').value.trim())e.push('Enter your name.');
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('email').value.trim()))e.push('Enter a valid email address — this is where your confirmation and receipts go.');
     if($('mobile').value.trim().replace(/\D/g,'').length<8)e.push('Enter a mobile number.');
