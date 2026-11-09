@@ -61,6 +61,10 @@ header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background
 .g2{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
 .g3{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted);min-width:0}
+/* Label text and its hint stay on one line, so fields in a row keep their
+   inputs on the same baseline. */
+.lblrow{display:flex;align-items:baseline;gap:6px;min-width:0;white-space:nowrap}
+.lblrow em{font-style:normal;font-size:11px;color:var(--accent);overflow:hidden;text-overflow:ellipsis}
 input,select,textarea{font:inherit;font-size:14px;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg);width:100%;min-width:0}
 input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn{font:inherit;font-size:14px;font-weight:500;padding:11px 22px;border-radius:var(--r);border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
@@ -179,7 +183,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
       <label class="f" id="noWrap">Member number
         <input id="memberNo" inputmode="numeric" placeholder="e.g. 114" autocomplete="off">
       </label>
-      <label class="f">Name <span id="fromReg" class="xs" style="color:var(--accent)" hidden>from the member register</span>
+      <label class="f"><span class="lblrow">Name <em id="fromReg" hidden>from register</em></span>
         <input id="leadName" autocomplete="name" placeholder="Full name">
       </label>
       <label class="f">Email
