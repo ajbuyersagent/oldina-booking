@@ -378,6 +378,30 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
   </div>
 
   <div class="step">
+    <div class="steph"><span class="stepn">Config</span><h2>Lodge details</h2></div>
+    <p class="small muted" style="margin-bottom:14px">These go into the emails members receive. Change the door code here when it rotates and every email sent from then on carries the new one.</p>
+    <div class="grid g2" style="margin-bottom:12px">
+      <label class="f">Front door code
+        <input id="cfgDoor" inputmode="numeric" autocomplete="off" maxlength="12">
+      </label>
+      <label class="f">Lodge Manager
+        <input id="cfgManager" autocomplete="off">
+      </label>
+    </div>
+    <div class="flag warn" style="margin-bottom:8px"><div><b>The real code never goes in this preview.</b> This page is published publicly, so anything typed here can be read by anyone with the link. In the live system the code sits in the club's spreadsheet and is merged in when the email is sent.</div></div>
+  </div>
+
+  <div class="step">
+    <div class="steph"><span class="stepn">Member emails</span><h2>Confirmation and door code</h2></div>
+    <p class="small muted" style="margin-bottom:14px">The two emails a member gets. The door code is released on full payment, not on confirmation — the same rule the club uses today, and the reason the balance gets paid.</p>
+    <div id="mailPick" class="row" style="margin-bottom:14px">
+      <button class="btn sm" data-mail="confirm" aria-pressed="true">1 — Booking confirmed</button>
+      <button class="btn sm" data-mail="paid" aria-pressed="false">2 — Paid in full</button>
+    </div>
+    <div id="memberMail"></div>
+  </div>
+
+  <div class="step">
     <div class="steph"><span class="stepn">Config</span><h2>Season dates</h2></div>
     <p class="small muted" style="margin-bottom:14px">Held on the <b>Seasons</b> tab of the booking spreadsheet, not in the code — the club re-dates a season each year without a developer. Edit a date here and every quote on the member form reprices immediately.</p>
     <div id="seasonCfg"></div>
@@ -836,6 +860,22 @@ const DOCS={
   safety  :{url:'https://www.oldinaperisher.com.au/s/Conventions-and-Safety-at-Perisher-Ski-Resort-2025.pdf',
             label:'Conventions and Safety at Perisher'},
   avail   :{url:'https://www.oldinaperisher.com.au/availability',label:'Lodge availability'}
+};
+/* Lodge details that go into member emails. The door code changes, so it is
+   a field the Booking Officer edits rather than something buried in code.
+
+   SECURITY: the code below is a placeholder. The published page is served
+   from a public GitHub Pages repo, so anything written here is readable by
+   anyone on the internet. In the live system the real code lives in the
+   club's spreadsheet or key vault and is merged into the email at send
+   time — it must never be committed to the site. */
+const LODGE={
+  doorCode:'0000',
+  manager:'Clark Killen',
+  checkIn:'2pm', checkOut:'9:30am',
+  dinner:'7pm', breakfast:'8am',
+  keyDeposit:20,
+  bookingsEmail:'bookings@oldinaperisher.com.au'
 };
 const LODGE_CAP=14;
 const capOf=ids=>ids.reduce((n,id)=>n+(ROOMS.find(r=>r.id===id)||{cap:0}).cap,0);
@@ -1528,6 +1568,81 @@ function renderCardView(){
   startCountdown(r);
 }
 
+/* ---------------- Member emails ----------------
+   Modelled on what the Booking Officer sends today, keeping the content
+   members already rely on — getting there, kitchen duty, the ski cart, fire
+   orders — and changing only what the system can now fill in or enforce.
+
+   The door code is released on full payment. That is the club's existing
+   rule and it is the strongest lever there is for getting the balance in,
+   so it stays exactly as it is. */
+let mailShown='confirm';
+function sampleBooking(){
+  return requests.find(x=>x.status==='confirmed')||requests.find(x=>x.status==='queued')||requests[0];
+}
+function lodgeNotes(){
+  return `
+  <p style="margin:18px 0 6px"><b>Some important points</b></p>
+  <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.6">
+    <li><b>Getting to the lodge.</b> From the Perisher Valley Ski Tube terminal take 4SITE oversnow to the door, or walk — about 20 minutes uphill.</li>
+    <li><b>Check in</b> from ${LODGE.checkIn}. <b>Check out</b> by ${LODGE.checkOut}, and please strip your bed and take your sheets and towels to the laundry.</li>
+    <li><b>Bedroom key.</b> Ask ${LODGE.manager.split(' ')[0]} if you'd like one — a $${LODGE.keyDeposit} deposit, returned at the end of your stay.</li>
+    <li><b>Linen and towels</b> are provided. Changeover days are Friday and Sunday; arrive on another day and your linen will be on the bed for you to make up.</li>
+    <li><b>Meals.</b> Dinner at ${LODGE.dinner}, breakfast at ${LODGE.breakfast}. Oldina runs a set-up and service kitchen roster: for one breakfast and one dinner in a 7-day stay you'll set and clear the table and load and empty the dishwasher.</li>
+    <li><b>Getting back after skiing.</b> Walk, take the 4SITE Skiers Special to the door between 3:30 and 5pm, or load your skis into the Oldina ski cart by the Perisher Quad from 2:30pm and walk back unencumbered. Take your poles with you, and unload the cart yourself when it returns.</li>
+    <li><b>Fire orders.</b> Please read the evacuation procedure in the hallway on your floor, and never chock open a fire door.</li>
+    <li><b>Please turn off</b> lights, heaters and electric blankets when you're not in the room, and the heater if you open a window.</li>
+  </ol>
+  <p class="small muted" style="margin:14px 0 0">Our Lodge Manager is ${LODGE.manager}. Cancellation: more than 30 days before arrival, a fee of 10% of the booking applies. Inside 30 days the booking is not refundable, and early departures are not refunded. Changes to a confirmed booking attract a $100 fee; extending it does not.</p>`;
+}
+function renderMemberMail(){
+  const host=$('memberMail'); if(!host)return;
+  [...document.querySelectorAll('#mailPick [data-mail]')].forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mail===mailShown)));
+  const r=sampleBooking();
+  if(!r){host.innerHTML=`<div class="panel"><p class="muted small">No bookings yet.</p></div>`;return}
+  const bal=balanceOf(r),sch=balSchedule(r),nts=nightsBetween(r.arr,r.dep);
+  const paid=mailShown==='paid';
+  const rows=`
+    <div class="panel" style="margin:4px 0 16px">
+      <div class="tot"><span class="muted">Booking reference</span><span class="num">${r.ref}</span></div>
+      <div class="tot"><span class="muted">Arrive after ${LODGE.checkIn}</span><span class="num">${fmtDate(r.arr)}</span></div>
+      <div class="tot"><span class="muted">Depart by ${LODGE.checkOut}</span><span class="num">${fmtDate(r.dep)}</span></div>
+      <div class="tot"><span class="muted">Nights</span><span class="num">${nts}</span></div>
+      <div class="tot"><span class="muted">Guests</span><span class="num">${r.pax}</span></div>
+      <div class="tot"><span class="muted">Rooms</span><span class="num">${(r.rooms||[]).map(id=>(ROOMS.find(x=>x.id===id)||{}).name||id).join(', ')||'allocated on arrival'}</span></div>
+      <div class="tot"><span class="muted">Total</span><span class="num">${money(r.total)}</span></div>
+      <div class="tot"><span class="muted">${paid?'Paid':'Deposit charged today'}</span><span class="num">${money(paid?r.total:r.total-bal)}</span></div>
+      <div class="tot big"><span>${paid?'Balance owing':'Balance due '+fmtDate(sch.due)}</span><span class="num">${paid?money(0):money(bal)}</span></div>
+    </div>`;
+  host.innerHTML=`
+  <div class="mail">
+    <div class="mailhd">
+      <div><b>To</b><span>${r.member}</span></div>
+      <div><b>From</b><span>Oldina Ski Club &lt;${LODGE.bookingsEmail}&gt;</span></div>
+      <div><b>Subject</b><span><b>${paid
+        ? `Paid in full — your Oldina door code and arrival details (${r.ref})`
+        : `Booking confirmed — Oldina ${fmtDate(r.arr)} to ${fmtDate(r.dep)} (${r.ref})`}</b></span></div>
+    </div>
+    <div class="mailbody">
+      <p style="margin:0 0 14px">Hello ${(r.member||'').split(' ')[0]||'there'},</p>
+      ${paid
+        ? `<p style="margin:0 0 14px">Thank you — your booking is paid in full. Everything you need is below. Enjoy your stay.</p>`
+        : `<p style="margin:0 0 14px">Your booking is confirmed and your rooms are held. The 50% deposit has been charged to your card; the balance will be taken automatically from the same card on <b>${fmtDate(sch.due)}</b>, 30 days before you arrive. You don't need to do anything.</p>`}
+      ${rows}
+      ${paid
+        ? `<div class="flag ok"><div style="width:100%">
+             <b>Front door code</b>
+             <div style="font-size:34px;font-weight:600;letter-spacing:.14em;line-height:1.2;margin:8px 0 4px">${LODGE.doorCode||'—'}</div>
+             <div class="xs">Please keep this confidential, and make sure the front door is closed whenever you leave the lodge.</div>
+           </div></div>`
+        : `<div class="flag warn"><div><b>Front door code.</b> You'll receive this once the booking is paid in full — automatically, on ${fmtDate(sch.due)}, when the balance is taken.</div></div>`}
+      <p style="margin:16px 0 0" class="small muted">Any allergies or dietary requirements for anyone in your party? Reply and we'll pass them to ${LODGE.manager.split(' ')[0]} — and please remind him when you arrive.</p>
+      ${lodgeNotes()}
+      <p style="margin:18px 0 0">Kind regards<br><b>Bookings, Oldina Perisher</b><br><span class="small muted">${LODGE.bookingsEmail}</span></p>
+    </div>
+  </div>`;
+}
+
 function renderSeasonCfg(){
   $('seasonCfg').innerHTML=`<div class="tw"><table>
     <thead><tr><th>Season</th><th>First night</th><th>Last night</th><th>Covers</th></tr></thead>
@@ -1671,6 +1786,21 @@ function renderDocs(){
 document.querySelectorAll('.reqack').forEach(a=>a.addEventListener('change',()=>{$('result').innerHTML=''}));
 
 $('packDate').addEventListener('change',renderPack);
+
+/* Lodge details the Officer can edit. Changing the code re-renders the
+   emails so they can see exactly what the member will get. */
+['cfgDoor','cfgManager'].forEach(id=>{
+  const el=$(id); if(!el)return;
+  el.addEventListener('input',()=>{
+    if(id==='cfgDoor')LODGE.doorCode=el.value.trim();
+    else LODGE.manager=el.value.trim()||'the Lodge Manager';
+    renderMemberMail();
+  });
+});
+$('mailPick').addEventListener('click',e=>{
+  const b=e.target.closest('[data-mail]');if(!b)return;
+  mailShown=b.dataset.mail; renderMemberMail();
+});
 
 /* The email's button is the member's only route in; in the preview it drops
    them at the form the real link would open. */
@@ -1882,7 +2012,7 @@ function showView(v){
   $('cardview').hidden=(v!=='cardview');
   if(v==='cardview')renderCardView();
   if(v==='availview'){renderCalendar($('availCal'));renderAvailTable()}
-  if(v==='officer'){renderQueue();renderConfirmed();renderOccupancy();renderPack()}
+  if(v==='officer'){renderQueue();renderConfirmed();renderOccupancy();renderPack();renderMemberMail()}
   window.scrollTo({top:0});
 }
 $('vMember').addEventListener('click',()=>showView('member'));
@@ -1903,5 +2033,6 @@ $('availTable').addEventListener('click',e=>{
 renderMembers();applyOption();checkDates();renderGuests();quote();pmFields();
 renderQueue();renderSeasonCfg();renderConfirmed();renderCardView();renderOccupancy();renderPack();
 renderRateNote();renderBedPick();renderAvail();renderAvailTable();renderDocs();
+$('cfgDoor').value=LODGE.doorCode; $('cfgManager').value=LODGE.manager; renderMemberMail();
 renderNav();renderProg();goStep(1);
 </script>
