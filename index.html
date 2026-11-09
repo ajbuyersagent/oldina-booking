@@ -125,6 +125,27 @@ td.r,th.r{text-align:right}
 hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .stack{display:flex;flex-direction:column;gap:14px}
+/* availability calendar */
+.calwrap{border:1px solid var(--line);border-radius:var(--r);padding:14px;background:var(--bg)}
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.calhead h4{margin:0;font-size:15px;font-weight:500}
+.calnav{display:flex;gap:6px}
+.calnav button{font:inherit;font-size:13px;padding:4px 11px;border-radius:var(--r);border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.calnav button:disabled{opacity:.35;cursor:not-allowed}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.caldow{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center;padding-bottom:4px}
+.calday{border:1px solid transparent;border-radius:8px;padding:5px 2px;text-align:center;font-size:11px;min-height:46px;display:flex;flex-direction:column;justify-content:center;gap:1px}
+.calday.out{color:var(--line)}
+.calday b{font-size:13px;font-weight:400;display:block}
+.calday span{font-size:11px;font-weight:500}
+.calday.free{background:var(--ok-soft);color:var(--ok);cursor:pointer}
+.calday.tight{background:var(--warn-soft);color:var(--warn);cursor:pointer}
+.calday.none{background:var(--stop-soft);color:var(--stop)}
+.calday.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.calday.edge{background:var(--accent);color:#fff}
+.callegend{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--muted)}
+.callegend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+
 /* availability strip */
 .availrow{display:flex;gap:4px;flex-wrap:wrap}
 .availcell{flex:1 1 56px;min-width:0;text-align:center;border:1px solid var(--line);border-radius:var(--r);padding:7px 4px;font-size:11px;color:var(--muted)}
@@ -172,7 +193,11 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
     <h1>Availability</h1>
     <p class="muted" style="margin-top:8px;max-width:62ch">Places left across the <span id="availYear"></span> season, week by week. Counts confirmed bookings only — requests waiting on the Booking Officer hold nothing, so a week showing beds free may still be contested.</p>
   </div>
-  <div class="step"><div id="availTable"></div></div>
+  <div class="step">
+    <div id="availCal"></div>
+    <h3 style="margin:28px 0 10px">By the week</h3>
+    <div id="availTable"></div>
+  </div>
 </section>
 
 <!-- ============ CARD UPDATE (member recovery) ============ -->
@@ -636,18 +661,79 @@ function checkDates(){
   renderAvail();
 }
 
+/* Month grid of places left. Clicking a day sets arrival, then departure —
+   which is how someone after two nights midweek actually picks them. */
+let calMonth=null;
+function monthBounds(){
+  const first=SEASONS[0].s.slice(0,7), last=SEASONS[SEASONS.length-1].e.slice(0,7);
+  return{first,last};
+}
+function shiftMonth(ym,n){
+  let [y,m]=ym.split('-').map(Number); m+=n;
+  while(m>12){m-=12;y++} while(m<1){m+=12;y--}
+  return y+'-'+String(m).padStart(2,'0');
+}
+function renderCalendar(host,opts){
+  opts=opts||{};
+  const arr=$('arr').value,dep=$('dep').value;
+  const {first,last}=monthBounds();
+  if(!calMonth)calMonth=(arr||SEASONS[0].s).slice(0,7);
+  if(calMonth<first)calMonth=first; if(calMonth>last)calMonth=last;
+  const [Y,M]=calMonth.split('-').map(Number);
+  const firstDay=new Date(Date.UTC(Y,M-1,1));
+  const daysInMonth=new Date(Date.UTC(Y,M,0)).getUTCDate();
+  const lead=firstDay.getUTCDay();
+  const cells=[];
+  for(let i=0;i<lead;i++)cells.push(null);
+  for(let dnum=1;dnum<=daysInMonth;dnum++)cells.push(iso(new Date(Date.UTC(Y,M-1,dnum))));
+  const need=headcount()||1;
+  const body=cells.map(night=>{
+    if(!night)return `<div class="calday out"></div>`;
+    const dayNo=Number(night.slice(8));
+    if(!seasonOf(night))return `<div class="calday out"><b>${dayNo}</b></div>`;
+    const free=LODGE_CAP-peopleOn(night);
+    const cls=free<=0?'none':free<need?'tight':'free';
+    const inStay=arr&&dep&&night>=arr&&night<dep;
+    const isEdge=night===arr;
+    return `<div class="calday ${cls}${inStay?' on':''}${isEdge?' edge':''}" data-day="${night}" title="${fmtDate(night)} — ${Math.max(0,free)} of ${LODGE_CAP} places">
+      <b>${dayNo}</b><span>${Math.max(0,free)}</span></div>`;
+  }).join('');
+  host.innerHTML=`<div class="calwrap">
+    <div class="calhead">
+      <h4>${firstDay.toLocaleDateString('en-AU',{month:'long',year:'numeric',timeZone:'UTC'})}</h4>
+      <div class="calnav">
+        <button type="button" data-cal="-1" ${calMonth<=first?'disabled':''}>Earlier</button>
+        <button type="button" data-cal="1" ${calMonth>=last?'disabled':''}>Later</button>
+      </div>
+    </div>
+    <div class="calgrid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>`<div class="caldow">${x}</div>`).join('')}${body}</div>
+    <div class="callegend">
+      <span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>Places free</span>
+      <span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>Fewer than your party</span>
+      <span><i style="background:var(--stop-soft);border:1px solid var(--stop)"></i>Full</span>
+      <span><i style="background:var(--accent)"></i>Your stay</span>
+    </div>
+  </div>
+  <p class="xs muted" style="margin-top:10px">Each day shows places left that night, out of ${LODGE_CAP}. Click a night to start a stay, then click the night you leave. Minimum two nights.</p>`;
+}
+
 function renderAvail(){
-  const av=availability($('arr').value,$('dep').value);
+  const arr=$('arr').value,dep=$('dep').value;
+  const av=availability(arr,dep);
   if(!av.length){$('availFlag').innerHTML='';return}
   const low=Math.min(...av.map(x=>x.free));
   const need=headcount();
   const full=av.filter(x=>x.free===0).length;
   const tight=av.filter(x=>x.free>0&&x.free<need).length;
-  const bar=`<div class="availrow">${av.map(x=>{
-    const cls=x.free===0?'none':x.free<need?'tight':'free';
-    return `<div class="availcell ${cls}"><b>${fmtDate(x.night).replace(/^\w+ /,'')}</b><span class="num">${x.free}</span></div>`;
-  }).join('')}</div>`;
-  let flag='';
+
+  /* Show the whole Sunday-to-Sunday week around the stay, not just the nights
+     asked for. Someone after two nights midweek needs to see what sits either
+     side — whether to shift a night, or stretch into a cheaper one. */
+  let from=arr; while(d(from).getUTCDay()!==0)from=addDays(from,-1);
+  let to=dep;   while(d(to).getUTCDay()!==0)to=addDays(to,1);
+  const span=availability(from,to).filter(x=>seasonOf(x.night));
+  const inStay=x=>x.night>=arr&&x.night<dep;
+    let flag='';
   if(full){
     flag=`<div class="flag stop"><div><b>The lodge is full on ${full} of these night${av.length===1?'':'s'}.</b> Try different dates, or submit anyway and the Booking Officer will put you on the waitlist in order of receipt.</div></div>`;
   }else if(need&&low<need){
@@ -655,9 +741,10 @@ function renderAvail(){
   }else{
     flag=`<div class="flag ok"><div><b>Room for your party on every night.</b> ${low} of ${LODGE_CAP} places left at the tightest point${need?`, and your party is ${need}`:''}.</div></div>`;
   }
-  $('availFlag').innerHTML=`<h3 style="margin:22px 0 8px">Places left, night by night</h3>
-    <p class="small muted" style="margin-bottom:10px">The lodge sleeps ${LODGE_CAP} a night. Counts confirmed bookings only. Requests are filled in order of receipt, so this is a guide rather than a reservation.</p>
-    ${bar}${flag}`;
+  $('availFlag').innerHTML=`<h3 style="margin:22px 0 8px">Availability</h3>
+    <p class="small muted" style="margin-bottom:12px">The lodge sleeps ${LODGE_CAP} a night. Counts confirmed bookings only — requests are filled in order of receipt, so this is a guide rather than a reservation.</p>
+    <div id="calHost"></div>${flag}`;
+  renderCalendar($('calHost'));
 }
 
 /* ---------------- Availability ----------------
@@ -1214,6 +1301,33 @@ $('guests').addEventListener('change',e=>{
   if(k==='supp'){guests[i].supp=e.target.checked;quote();return}
   if(k==='supp'){guests[i].supp=e.target.checked;renderAvail();quote();return}
 });
+$('availCal').addEventListener('click',e=>{
+  const nav=e.target.closest('[data-cal]');
+  if(nav){calMonth=shiftMonth(calMonth,Number(nav.dataset.cal));renderCalendar($('availCal'));return}
+  const day=e.target.closest('[data-day]');if(!day)return;
+  /* Picking a night here starts a booking for it */
+  $('arr').value=day.dataset.day;$('dep').value=addDays(day.dataset.day,2);$('opt').value='custom';
+  checkDates();renderGuests();renderBedPick();quote();
+  showView('member');goStep(1);
+});
+
+$('availFlag').addEventListener('click',e=>{
+  const nav=e.target.closest('[data-cal]');
+  if(nav){calMonth=shiftMonth(calMonth,Number(nav.dataset.cal));renderCalendar($('calHost'));return}
+  const day=e.target.closest('[data-day]');
+  if(!day)return;
+  const night=day.dataset.day;
+  const arr=$('arr').value,dep=$('dep').value;
+  /* First click starts a stay; the next click that is later sets the night
+     you leave. Clicking earlier, or on the current arrival, starts again. */
+  if(!arr||night<=arr||(arr&&dep&&night>=arr&&night<dep)){
+    $('arr').value=night;$('dep').value=addDays(night,2);$('opt').value='custom';
+  }else{
+    $('dep').value=night;$('opt').value=nightsBetween(arr,night)===7?'week':'custom';
+  }
+  checkDates();renderGuests();renderBedPick();quote();
+});
+
 $('bedPick').addEventListener('click',e=>{
   const b=e.target.closest('[data-pick]');if(!b||b.disabled)return;
   const id=b.dataset.pick,at=chosenBeds.indexOf(id);
@@ -1434,7 +1548,7 @@ function showView(v){
   Object.keys(views).forEach(sec=>{$(sec).hidden=(sec!==v)});
   $('cardview').hidden=(v!=='cardview');
   if(v==='cardview')renderCardView();
-  if(v==='availview')renderAvailTable();
+  if(v==='availview'){renderCalendar($('availCal'));renderAvailTable()}
   if(v==='officer'){renderQueue();renderConfirmed()}
   window.scrollTo({top:0});
 }
