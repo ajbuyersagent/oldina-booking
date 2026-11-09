@@ -314,17 +314,24 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
 <section id="officer" hidden>
   <div class="step">
     <h1>Booking Officer</h1>
-    <p class="muted" style="margin-top:8px;max-width:62ch">Requests in order of receipt. Allocate rooms and beds, then confirm — the 50% deposit is charged on confirmation and the balance is scheduled for 30 days before arrival.</p>
+    <p class="muted" style="margin-top:8px;max-width:62ch">Requests in order of receipt, with rooms already set from the member's choice or allocated automatically. Confirm and the 50% deposit is charged, with the balance scheduled for 30 days before arrival. You only need to intervene when a room has been taken by someone ahead in the queue.</p>
   </div>
 
   <div class="step">
-    <div class="steph"><span class="stepn">Queue</span><h2>Awaiting allocation</h2></div>
+    <div class="steph"><span class="stepn">Queue</span><h2>Awaiting confirmation</h2></div>
     <div id="queue"></div>
   </div>
 
   <div class="step" id="detailStep">
     <div class="steph"><span class="stepn">Request</span><h2 id="detailName">Select a request</h2></div>
     <div id="detail"></div>
+  </div>
+
+  <div class="step">
+    <div class="steph"><span class="stepn">Occupancy</span><h2>People per night</h2></div>
+    <p class="small muted" style="margin-bottom:14px">The lodge sleeps <span id="occCap"></span> a night. Any night over that shows red — it should never happen, so treat it as a fault.</p>
+    <div id="occFlag"></div>
+    <div id="occCal"></div>
   </div>
 
   <div class="step">
@@ -500,9 +507,9 @@ let guests=[
   {first:'Jonah',last:'Vance',dob:'2013-09-02',member:false,supp:false,diet:'No nuts'}
 ];
 let requests=[
-  {ref:'OLD-2027-0041',member:'Priya Nandakumar',financial:true,arrears:0,arr:'2027-07-11',dep:'2027-07-18',pax:4,total:3348,received:'2027-03-06T09:00:14',status:'queued',rooms:[],requestedBeds:['R3','R4'],notes:'The two children in one room and us in the other, ideally next door. Happy with any floor.',diets:['Arun Nandakumar: coeliac']},
-  {ref:'OLD-2027-0042',member:'Douglas Reay',financial:false,arrears:340,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:3910,received:'2027-03-06T09:01:38',status:'queued',rooms:[]},
-  {ref:'OLD-2027-0043',member:'Tomas Weir',financial:true,arrears:0,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:1934,received:'2027-03-06T09:02:05',status:'queued',rooms:[]}
+  {ref:'OLD-2027-0041',member:'Priya Nandakumar',financial:true,arrears:0,arr:'2027-07-11',dep:'2027-07-18',pax:4,total:3348,received:'2027-03-06T09:00:14',status:'queued',rooms:['R3','R4'],requestedBeds:['R3','R4'],notes:'The two children in one room and us in the other, ideally next door. Happy with any floor.',diets:['Arun Nandakumar: coeliac']},
+  {ref:'OLD-2027-0042',member:'Douglas Reay',financial:false,arrears:340,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:3910,received:'2027-03-06T09:01:38',status:'queued',rooms:['R1']},
+  {ref:'OLD-2027-0043',member:'Tomas Weir',financial:true,arrears:0,arr:'2027-07-04',dep:'2027-07-11',pax:2,total:1934,received:'2027-03-06T09:02:05',status:'queued',rooms:['R2']}
 ];
 let selected=null;
 
@@ -675,6 +682,7 @@ function shiftMonth(ym,n){
 }
 function renderCalendar(host,opts){
   opts=opts||{};
+  const occ=opts.mode==='occupancy';
   const arr=$('arr').value,dep=$('dep').value;
   const {first,last}=monthBounds();
   if(!calMonth)calMonth=(arr||SEASONS[0].s).slice(0,7);
@@ -691,7 +699,13 @@ function renderCalendar(host,opts){
     if(!night)return `<div class="calday out"></div>`;
     const dayNo=Number(night.slice(8));
     if(!seasonOf(night))return `<div class="calday out"><b>${dayNo}</b></div>`;
-    const free=LODGE_CAP-peopleOn(night);
+    const used=peopleOn(night), free=LODGE_CAP-used;
+    if(occ){
+      const over=used>LODGE_CAP;
+      const cls=over?'none':used===LODGE_CAP?'tight':used>0?'free':'';
+      return `<div class="calday ${cls}" title="${fmtDate(night)} — ${used} of ${LODGE_CAP}${over?' — OVER CAPACITY':''}">
+        <b>${dayNo}</b><span>${used?used:''}</span></div>`;
+    }
     const cls=free<=0?'none':free<need?'tight':'free';
     const inStay=arr&&dep&&night>=arr&&night<dep;
     const isEdge=night===arr;
@@ -707,14 +721,19 @@ function renderCalendar(host,opts){
       </div>
     </div>
     <div class="calgrid">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>`<div class="caldow">${x}</div>`).join('')}${body}</div>
-    <div class="callegend">
-      <span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>Places free</span>
-      <span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>Fewer than your party</span>
-      <span><i style="background:var(--stop-soft);border:1px solid var(--stop)"></i>Full</span>
-      <span><i style="background:var(--accent)"></i>Your stay</span>
+    <div class="callegend">${occ
+      ? `<span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>Booked, under ${LODGE_CAP}</span>
+         <span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>At ${LODGE_CAP} — full</span>
+         <span><i style="background:var(--stop-soft);border:1px solid var(--stop)"></i>Over ${LODGE_CAP}</span>`
+      : `<span><i style="background:var(--ok-soft);border:1px solid var(--ok)"></i>Places free</span>
+         <span><i style="background:var(--warn-soft);border:1px solid var(--warn)"></i>Fewer than your party</span>
+         <span><i style="background:var(--stop-soft);border:1px solid var(--stop)"></i>Full</span>
+         <span><i style="background:var(--accent)"></i>Your stay</span>`}
     </div>
   </div>
-  <p class="xs muted" style="margin-top:10px">Each day shows places left that night, out of ${LODGE_CAP}. Click a night to start a stay, then click the night you leave. Minimum two nights.</p>`;
+  <p class="xs muted" style="margin-top:10px">${occ
+    ? `People booked each night against the ${LODGE_CAP} limit. Confirmed bookings only.`
+    : `Each day shows places left that night, out of ${LODGE_CAP}. Click a night to start a stay, then click the night you leave. Minimum two nights.`}</p>`;
 }
 
 function renderAvail(){
@@ -797,6 +816,16 @@ function availability(arr,dep){
     const rt=roomsTakenOn(n),pp=peopleOn(n),sg=singlesOn(n);
     return{night:n,taken:rt,roomsFree:ALL_ROOMS-rt,people:pp,free:LODGE_CAP-pp,singlesFree:MAX_SINGLE_SUPP-sg};
   });
+}
+/* Fewest free rooms that will sleep the party, largest first. Used when the
+   member leaves it to the club, and to re-seat them if their choice is gone
+   by the time the Officer gets to it. */
+function autoAllocate(arr,dep,pax,exclude){
+  const taken=roomsTakenMap(arr,dep);
+  const free=ROOMS.filter(r=>!taken[r.id]&&!(exclude||[]).includes(r.id)).sort((a,b)=>b.cap-a.cap);
+  const out=[];let left=pax;
+  for(const r of free){if(left<=0)break;out.push(r.id);left-=r.cap}
+  return left>0?[]:out;
 }
 function roomsTakenMap(arr,dep){
   const nts=nightsList(arr,dep),out={};
@@ -1055,7 +1084,7 @@ function submit(){
   const arr2=arr,dep2=dep;
   const now=new Date();
   const ref='OLD-2027-'+String(44+requests.length-3).padStart(4,'0');
-  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:headcount(),supps:suppsWanted(),total:q.total,received:now.toISOString().slice(0,19),status:'queued',rooms:[],subscription:subDue(),requestedBeds:[...chosenBeds],notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
+  requests.push({ref,member:($('leadName').value.trim()||(lead.rec?lead.rec.name:'Non-member booking')),memberNo:lead.rec?lead.rec.no:'—',financial:!!(lead.rec&&lead.rec.financial),arrears:lead.rec?lead.rec.arrears:0,arr,dep,pax:headcount(),supps:suppsWanted(),total:q.total,received:now.toISOString().slice(0,19),status:'queued',rooms:(chosenBeds.length?[...chosenBeds]:autoAllocate(arr,dep,headcount(),[])),subscription:subDue(),requestedBeds:[...chosenBeds],notes:$('notes').value.trim(),diets:guests.filter(g=>g.diet.trim()).map(g=>`${g.first} ${g.last}: ${g.diet.trim()}`)});
   const dep50=Math.round(q.total*50)/100;
   $('result').innerHTML='';
   STEPS.forEach(s=>{$('ms'+s.n).hidden=true});
@@ -1092,13 +1121,13 @@ function renderQueue(){
     return `<button class="q" data-ref="${r.ref}" aria-pressed="${selected===r.ref}">
       <span><b>${r.member}</b><br><span class="small muted num">${fmtDate(r.arr)} → ${fmtDate(r.dep)} · ${r.pax} guest${r.pax===1?'':'s'} · ${money(r.total)}</span></span>
       <span class="row">${r.financial?'':'<span class="chip stop">Subscription unpaid</span>'}<span class="chip neu num">${t.toLocaleString('en-AU',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit',second:'2-digit'})}</span></span>
-    </button>`}).join(''):`<p class="muted small">Nothing awaiting allocation.</p>`;
+    </button>`}).join(''):`<p class="muted small">Nothing awaiting confirmation.</p>`;
   if(!qs.find(r=>r.ref===selected))selected=null;
   renderDetail();renderRegister();
 }
 
 function renderDetail(){
-  if(!selected){$('detailName').textContent='Select a request';$('detail').innerHTML=`<p class="muted small">Choose a request from the queue to allocate rooms.</p>`;return}
+  if(!selected){$('detailName').textContent='Select a request';$('detail').innerHTML=`<p class="muted small">Choose a request from the queue to review and confirm.</p>`;return}
   const r=requests.find(x=>x.ref===selected);
   $('detailName').textContent=r.member;
   const nts=nightsList(r.arr,r.dep);
@@ -1116,25 +1145,36 @@ function renderDetail(){
       ${r.financial?'<span class="chip ok">Financial</span>':(r.subscription?`<span class="chip ok">Subscription ${money(r.subscription)} included</span>`:`<span class="chip stop">Arrears ${money(r.arrears)}</span>`)}
     </div>
     ${(!r.financial&&r.subscription)?`<div class="flag ok"><div><b>Subscription paid with this booking.</b> ${money(r.subscription)} is charged in full on confirmation, alongside the deposit. Member rates have been applied. Flag it to the Treasurer so the subscription register is updated.</div></div>`:''}
-    ${(!r.financial&&!r.subscription)?`<div class="flag stop"><div><b>Subscription unpaid.</b> This request should not have reached allocation — check before confirming.</div></div>`:''}
-    ${(r.requestedBeds&&r.requestedBeds.length)?(()=>{
+    ${(!r.financial&&!r.subscription)?`<div class="flag stop"><div><b>Subscription unpaid.</b> This request should not have reached the queue — check before confirming.</div></div>`:''}
+    ${(()=>{
+      /* Rooms are settled when the member submits — either their own choice
+         or an automatic allocation. The Officer confirms rather than
+         allocates, and only has to act when the choice has been taken by
+         someone ahead in the queue. */
       const names=id=>(ROOMS.find(x=>x.id===id)||{name:id}).name;
-      const clash=r.requestedBeds.filter(id=>taken[id]);
-      const matched=r.requestedBeds.every(id=>(r.rooms||[]).includes(id))&&(r.rooms||[]).length===r.requestedBeds.length;
-      return `<div class="flag ${clash.length?'stop':matched?'ok':'warn'}"><div>
-        <b>Member asked for ${r.requestedBeds.map(names).join(', ')}.</b>
-        ${clash.length?`${clash.map(names).join(', ')} already allocated to someone else — you'll need to move them.`
-          :matched?'Confirmed as requested.'
-          :`<button class="btn sm" data-accept="${r.ref}" style="margin-top:8px">Accept the member's choice</button>`}
-      </div></div>`;})():''}
+      const clash=(r.rooms||[]).filter(id=>taken[id]);
+      const chose=r.requestedBeds&&r.requestedBeds.length;
+      if(clash.length){
+        const alt=autoAllocate(r.arr,r.dep,r.pax,[]);
+        return `<div class="flag stop"><div><b>${clash.map(names).join(', ')} already taken by another booking.</b>
+          ${alt.length?`${alt.map(names).join(', ')} would suit — sleeps ${capOf(alt)} for ${r.pax}.
+          <button class="btn sm" data-reseat="${r.ref}" style="margin-top:8px">Move them to ${alt.map(names).join(' and ')}</button>`
+          :'Nothing else free on these dates for this party.'}</div></div>`;
+      }
+      return `<div class="flag ok"><div><b>${(r.rooms||[]).map(names).join(', ')||'No rooms'} — sleeps ${capOf(r.rooms||[])} for ${r.pax} guest${r.pax===1?'':'s'}.</b>
+        ${chose?'Chosen by the member.':'Allocated automatically — the member had no preference.'}</div></div>`;
+    })()}
     ${r.notes?`<div class="flag warn"><div><b>Note from the member</b><br>${r.notes.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`:''}
     ${(r.diets&&r.diets.length)?`<div class="flag warn"><div><b>Dietary requirements</b><br>${r.diets.map(x=>x.replace(/&/g,'&amp;').replace(/</g,'&lt;')).join('<br>')}</div></div>`:''}
-    <h3 style="margin:18px 0 10px">Allocate rooms — ${r.pax} guest${r.pax===1?'':'s'}, ${nts.length} night${nts.length===1?'':'s'}</h3>
-    <div class="beds">${ROOMS.map(room=>{
-      const isTaken=taken[room.id],mine=(r.rooms||[]).includes(room.id);
-      return `<button class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-room="${room.id}" ${isTaken?'disabled':''}>
-        <b>${room.name}</b><span class="muted">${isTaken?taken[room.id]:(mine?'Allocated':'Sleeps '+room.cap)}</span></button>`;
-    }).join('')}</div>
+    <details style="margin-top:16px">
+      <summary class="small" style="cursor:pointer;color:var(--accent)">Change rooms</summary>
+      <p class="xs muted" style="margin:10px 0">Only needed if you want to move them — the rooms above are already set.</p>
+      <div class="beds">${ROOMS.map(room=>{
+        const isTaken=taken[room.id],mine=(r.rooms||[]).includes(room.id);
+        return `<button class="bed ${mine?'taken':''} ${isTaken?'held':''}" data-room="${room.id}" ${isTaken?'disabled':''}>
+          <b>${room.name}</b><span class="muted">${isTaken?taken[room.id]:(mine?'Allocated':'Sleeps '+room.cap)}</span></button>`;
+      }).join('')}</div>
+    </details>
     <div class="panel" style="margin-top:18px">
       <div class="tot"><span class="muted">Total</span><span class="num">${money(r.total)}</span></div>
       ${r.subscription?`<div class="tot"><span class="muted">Annual subscription</span><span class="num">${money(r.subscription)}</span></div>`:''}
@@ -1143,7 +1183,7 @@ function renderDetail(){
     </div>
     <div class="row" style="margin-top:18px">
       <button class="btn solid" id="confirmBtn" ${capOf(r.rooms||[])<r.pax?'disabled':''}>Confirm and charge ${money(dep50+(r.subscription||0))}</button>
-      <span class="small muted">${(r.rooms||[]).length} room${(r.rooms||[]).length===1?'':'s'} sleeping ${capOf(r.rooms||[])} for ${r.pax} guest${r.pax===1?'':'s'}${capOf(r.rooms||[])<r.pax?' — not enough yet':''}</span>
+      <span class="small muted">${capOf(r.rooms||[])<r.pax?'Rooms don\'t sleep the party yet — change them above.':'Confirmation and tax invoice go out automatically.'}</span>
     </div>
     <div id="confirmed"></div>`;
 }
@@ -1163,6 +1203,22 @@ function balSchedule(r){
   };
 }
 function balanceOf(r){return r.total-Math.round(r.total*50)/100}
+
+/* A season-wide check that nothing has slipped past the nightly limit. */
+function overCapacityNights(){
+  const out=[];
+  let c=SEASONS[0].s;const end=SEASONS[SEASONS.length-1].e;
+  while(c<=end){const n=peopleOn(c);if(n>LODGE_CAP)out.push({night:c,people:n});c=addDays(c,1)}
+  return out;
+}
+function renderOccupancy(){
+  const cap=$('occCap');if(cap)cap.textContent=LODGE_CAP;
+  const over=overCapacityNights();
+  $('occFlag').innerHTML=over.length
+    ? `<div class="flag stop"><div><b>${over.length} night${over.length===1?'':'s'} over the ${LODGE_CAP}-person limit.</b> ${over.slice(0,5).map(o=>fmtDate(o.night)+' ('+o.people+')').join(', ')}${over.length>5?' and more':''}. Something has been confirmed that shouldn't have been.</div></div>`
+    : `<div class="flag ok"><div><b>No night exceeds ${LODGE_CAP}.</b> Checked across the whole season.</div></div>`;
+  renderCalendar($('occCal'),{mode:'occupancy'});
+}
 
 function renderConfirmed(){
   const cs=requests.filter(r=>r.status!=='queued');
@@ -1360,12 +1416,12 @@ $('confirmedList').addEventListener('click',e=>{
     const r=requests.find(x=>x.ref===run.dataset.run);
     if(run.dataset.ok==='1'){r.balance='paid';r.attempts=0}
     else{r.balance='failed';r.attempts=(r.attempts||0)+1}
-    renderConfirmed();renderCardView();return;
+    renderConfirmed();renderCardView();renderOccupancy();return;
   }
   if(can){
     const r=requests.find(x=>x.ref===can.dataset.cancel);
     r.balance='cancelled';r.status='cancelled';r.rooms=[];
-    renderConfirmed();renderCardView();renderRegister();renderAvail();
+    renderConfirmed();renderCardView();renderRegister();renderAvail();renderOccupancy();
   }
 });
 
@@ -1408,18 +1464,23 @@ $('detail').addEventListener('click',e=>{
     if(at>=0)r.rooms.splice(at,1);else r.rooms.push(id);
     renderDetail();return;
   }
-  const acc=e.target.closest('[data-accept]');
-  if(acc){
-    const r=requests.find(x=>x.ref===acc.dataset.accept);
-    const taken=roomsTakenMap(r.arr,r.dep);
-    r.rooms=r.requestedBeds.filter(id=>!taken[id]);
+  const re=e.target.closest('[data-reseat]');
+  if(re){
+    const r=requests.find(x=>x.ref===re.dataset.reseat);
+    r.rooms=autoAllocate(r.arr,r.dep,r.pax,[]);
     renderDetail();return;
   }
   if(e.target.id==='confirmBtn'){
     const r=requests.find(x=>x.ref===selected);
+    /* Last line of defence: confirming must never push a night over the cap */
+    const breach=nightsList(r.arr,r.dep).filter(n=>peopleOn(n)+r.pax>LODGE_CAP);
+    if(breach.length){
+      $('confirmed').innerHTML=`<div class="flag stop"><div><b>Not confirmed.</b> This would put ${breach.map(fmtDate).join(', ')} over the ${LODGE_CAP}-person limit — ${peopleOn(breach[0])} already booked and this party is ${r.pax}.</div></div>`;
+      return;
+    }
     r.status='confirmed';r.balance='scheduled';r.attempts=0;
     const dep50=Math.round(r.total*50)/100+(r.subscription||0);
-    renderQueue();renderConfirmed();renderAvail();
+    renderQueue();renderConfirmed();renderAvail();renderOccupancy();
     $('register').insertAdjacentHTML('beforebegin',`<div class="flag ok" id="cf"><div><b>${r.ref} confirmed.</b> ${money(dep50)} deposit charged to the card on file. Confirmation and tax invoice emailed to ${r.member}, bed allocation sent to the Lodge Manager, balance of ${money(r.total-dep50)} scheduled for ${fmtDate(addDays(r.arr,-30))}.</div></div>`);
     setTimeout(()=>{const c=$('cf');if(c)c.remove()},9000);
   }
@@ -1549,7 +1610,7 @@ function showView(v){
   $('cardview').hidden=(v!=='cardview');
   if(v==='cardview')renderCardView();
   if(v==='availview'){renderCalendar($('availCal'));renderAvailTable()}
-  if(v==='officer'){renderQueue();renderConfirmed()}
+  if(v==='officer'){renderQueue();renderConfirmed();renderOccupancy()}
   window.scrollTo({top:0});
 }
 $('vMember').addEventListener('click',()=>showView('member'));
