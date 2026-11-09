@@ -393,7 +393,7 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:22px 0}
 
   <div class="step">
     <div class="steph"><span class="stepn">Member emails</span><h2>Confirmation and door code</h2></div>
-    <p class="small muted" style="margin-bottom:14px">The two emails a member gets. The door code is released on full payment, not on confirmation — the same rule the club uses today, and the reason the balance gets paid.</p>
+    <p class="small muted" style="margin-bottom:14px">The two emails a member gets. The door code rides along with the receipt — most members know it already, so it's a reminder, and it earns its place in the weeks after the code is rotated.</p>
     <div id="mailPick" class="row" style="margin-bottom:14px">
       <button class="btn sm" data-mail="confirm" aria-pressed="true">1 — Booking confirmed</button>
       <button class="btn sm" data-mail="paid" aria-pressed="false">2 — Paid in full</button>
@@ -1573,9 +1573,11 @@ function renderCardView(){
    members already rely on — getting there, kitchen duty, the ski cart, fire
    orders — and changing only what the system can now fill in or enforce.
 
-   The door code is released on full payment. That is the club's existing
-   rule and it is the strongest lever there is for getting the balance in,
-   so it stays exactly as it is. */
+   The door code goes out with the receipt once the balance is taken. Most
+   members already know it, so this is a reminder rather than anything the
+   booking depends on — it matters most right after the code is rotated.
+   It rides along with the receipt because that is the email they will go
+   looking for on the drive down. */
 let mailShown='confirm';
 function sampleBooking(){
   return requests.find(x=>x.status==='confirmed')||requests.find(x=>x.status==='queued')||requests[0];
@@ -1635,7 +1637,7 @@ function renderMemberMail(){
              <div style="font-size:34px;font-weight:600;letter-spacing:.14em;line-height:1.2;margin:8px 0 4px">${LODGE.doorCode||'—'}</div>
              <div class="xs">Please keep this confidential, and make sure the front door is closed whenever you leave the lodge.</div>
            </div></div>`
-        : `<div class="flag warn"><div><b>Front door code.</b> You'll receive this once the booking is paid in full — automatically, on ${fmtDate(sch.due)}, when the balance is taken.</div></div>`}
+        : `<div class="flag neu" style="border-color:var(--line);background:var(--surface);color:var(--muted)"><div><b>Front door code.</b> It comes with your receipt on ${fmtDate(sch.due)}, when the balance is taken — handy if it has changed since you were last up.</div></div>`}
       <p style="margin:16px 0 0" class="small muted">Any allergies or dietary requirements for anyone in your party? Reply and we'll pass them to ${LODGE.manager.split(' ')[0]} — and please remind him when you arrive.</p>
       ${lodgeNotes()}
       <p style="margin:18px 0 0">Kind regards<br><b>Bookings, Oldina Perisher</b><br><span class="small muted">${LODGE.bookingsEmail}</span></p>
